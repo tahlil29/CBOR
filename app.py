@@ -50,7 +50,7 @@ EMPLOYEES = [
     ("ankit", "Ankit Sharma", "Cash Deposit", "deposit", "Cash Officer", "CBR-EMP-101", "9829011101"),
     ("shifa", "Shifa Khan", "Cash Withdrawal", "withdrawal", "Cash Officer", "CBR-EMP-102", "9829011102"),
     ("jyoti", "Jyoti Rathore", "ATM, Loans & Lockers", "atm", "Operations Officer", "CBR-EMP-103", "9829011103"),
-    ("tahlil", "Tahlil Qureshi", "Account Management", "accounts", "Account Services Officer", "CBR-EMP-104", "9829011104"),
+    ("tahlil", "Tahlil Shaikh", "Account Management", "accounts", "Account Services Officer", "CBR-EMP-104", "9829011104"),
     ("sanket", "Sanket Joshi", "Digital Banking & KYC", "kyc", "Digital Banking Officer", "CBR-EMP-105", "9829011105"),
     ("bhavesh", "Bhavesh Mehta", "Branch Manager", "manager", "Branch Manager", "CBR-EMP-001", "9829011001"),
     ("admin", "System Administrator", "Administration", "admin", "System Administrator", "CBR-EMP-900", "9829011900"),
@@ -125,6 +125,13 @@ def next_cif(conn):
     ).fetchone()
     number = int(row[0][-6:]) + 1 if row else 1
     return f"CBRCIF{number:06d}"
+
+
+def employee_email(username, full_name):
+    parts = [p for p in full_name.lower().split() if p.isalpha()]
+    if len(parts) >= 2:
+        return f"{parts[0]}.{parts[-1]}@cbofr.gov.in"
+    return f"{username}@cbofr.gov.in"
 
 
 def next_employee_code(conn):
@@ -249,14 +256,14 @@ def init_db():
             """INSERT OR IGNORE INTO employees(username,full_name,department,role,password_hash,rank,email,phone,employee_code)
                VALUES(?,?,?,?,?,?,?,?,?)""",
             (username, name, dept, role, generate_password_hash(DEMO_PASSWORD), rank,
-             f"{username}@cbrudaipur.example", phone, code),
+             employee_email(username, name), phone, code),
         )
         conn.execute(
-            """UPDATE employees SET rank=?, employee_code=?,
+            """UPDATE employees SET full_name=?, rank=?, employee_code=?,
                phone=CASE WHEN phone IS NULL OR phone='' THEN ? ELSE phone END,
-               email=CASE WHEN email IS NULL OR email='' THEN ? ELSE email END
+               email=?
                WHERE username=?""",
-            (rank, code, phone, f"{username}@cbrudaipur.example", username),
+            (name, rank, code, phone, employee_email(username, name), username),
         )
     atm_rows = [
         ("ATM-01", "City Palace Road", 480000, 120000, "Online"),
@@ -461,7 +468,7 @@ def seed_branch_work(conn):
             (samples[1]["id"], "Cash transaction", "Customer says a ₹5,000 deposit receipt was not handed over.", "Open", "Ankit Sharma", None),
             (samples[2]["id"], "Net banking", "UPI collect request failed twice. Account is active and KYC is verified.", "Open", "Sanket Joshi", None),
             (samples[3]["id"], "KYC verification", "Address on the masked Aadhaar does not match the account opening form.", "Open", "Sanket Joshi", None),
-            (samples[4]["id"], "Account service", "Request for a cheque book of 25 leaves.", "Open", "Tahlil Qureshi", None),
+            (samples[4]["id"], "Account service", "Request for a cheque book of 25 leaves.", "Open", "Tahlil Shaikh", None),
             (samples[5]["id"], "Loan / locker", "Locker rent receipt for L-002 was not received by email.", "Resolved", "Jyoti Rathore", "Receipt regenerated and noted on the case."),
         ]
         for row in complaints:
@@ -1302,7 +1309,7 @@ def admin_section():
                        VALUES(?,?,?,?,?,?,?,?,?)""",
                     (
                         new_username, full_name, department, role, generate_password_hash(password),
-                        rank, email or f"{new_username}@cbrudaipur.example", phone, next_employee_code(conn),
+                        rank, email or employee_email(new_username, full_name), phone, next_employee_code(conn),
                     ),
                 )
                 conn.commit()

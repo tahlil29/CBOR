@@ -17,4 +17,21 @@ body{background:#f6f8fb}.bank-banner{height:126px;position:relative;display:flex
 @media(max-width:1300px){.dashboard-row,.dashboard-row.second-row{grid-template-columns:1fr 1fr}.cash-panel,.quick-panel{grid-column:auto}.stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.banner-skyline{display:none}}
 @media(max-width:900px){.bank-banner{height:100px;padding:10px}.bank-brand{min-width:0}.bank-brand h1{font-size:18px}.bank-brand h2{font-size:15px}.bank-brand p{font-size:10px}.bank-seal-img{width:50px;height:50px}.banner-user{min-width:150px}.banner-user .banner-time{font-size:8px}.sidebar{top:103px;width:70px}.branch-mini>div,.branch-mini strong,.branch-mini small,.sidebar nav a span:not(.sr-only),.sidebar-city{display:none}.sidebar-bottom .sidebar-logout span{display:none}.branch-mini{justify-content:center;padding:8px 0}.main{margin-left:70px;max-width:calc(100% - 70px)}.topbar{margin-left:-12px;margin-right:-12px;padding:0 14px}.dashboard-row,.dashboard-row.second-row,.profile-layout{grid-template-columns:1fr}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cred-grid{grid-template-columns:repeat(4,1fr)}
+.login-main{background:linear-gradient(135deg,#061b32 0%,#0f3558 45%,#f5f8fc 45%,#f5f8fc 100%);align-items:stretch;padding:0}
+.login-main>footer{display:none}
+.login-shell{display:grid;grid-template-columns:minmax(280px,1fr) minmax(360px,440px);width:min(960px,100%);min-height:100vh;margin:0 auto}
+.login-hero{padding:48px 40px;color:#fff;display:flex;flex-direction:column;justify-content:center}
+.login-hero .eyebrow.light{color:#d7c18e}
+.login-hero h1{font-family:Georgia,serif;font-size:32px;color:#fff;margin:10px 0 6px;letter-spacing:-.5px}
+.login-motto{font-family:Georgia,serif;color:#e8d5a8;font-size:15px;margin-bottom:28px}
+.login-hero-crest{width:96px;height:96px;margin-bottom:18px}
+.login-facts{list-style:none;margin:0 0 22px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.login-facts li{background:#ffffff12;border:1px solid #ffffff22;border-radius:8px;padding:12px}
+.login-facts span{display:block;font-size:9px;letter-spacing:1px;color:#b8d0e6;text-transform:uppercase}
+.login-facts strong{display:block;font-size:13px;color:#fff;margin-top:5px}
+.login-address,.login-hours{font-size:12px;color:#c8d9ea;line-height:1.6;max-width:360px}
+.login-shell .login-card{border-radius:0;box-shadow:none;border:0;border-left:1px solid var(--line);min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:48px 40px}
+.login-shell .login-card h2{font-size:26px;margin:8px 0}
+.login-foot{margin-top:18px}
+@media(max-width:900px){.login-main{background:#f5f8fc}.login-shell{grid-template-columns:1fr;min-height:auto}.login-hero{padding:32px 24px;border-radius:0}.login-shell .login-card{min-height:auto;border-left:0;border-top:1px solid var(--line);padding:28px 24px 36px}}
 @media(max-width:600px){.bank-brand h1{font-size:14px}.bank-brand h2{font-size:12px}.bank-brand p{display:none}.bank-seal-img{width:44px;height:44px}.banner-user{min-width:auto;grid-template-columns:30px 1fr 14px;gap:5px;padding-left:7px}.profile-avatar{width:30px;height:30px}.banner-user strong{font-size:10px}.banner-user small{font-size:8px}.banner-time{display:none}.main{padding:0 9px 16px}.topbar{height:60px}.topbar h2{font-size:15px}.top-right .date{display:none}.stat-grid{grid-template-columns:1fr 1fr;gap:7px}.stat-card{padding:10px}.stat-value{font-size:17px}.welcome h1{font-size:19px}.branch-pill{font-size:8px}.branch-facts{gap:10px}.admin-inline{flex-wrap:wrap}}
