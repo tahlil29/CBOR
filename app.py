@@ -6,6 +6,7 @@ import random
 import re
 import secrets
 import sqlite3
+import threading
 import time
 from datetime import datetime, timedelta
 from functools import wraps
@@ -68,6 +69,9 @@ if os.environ.get("RENDER") or os.environ.get("BANK_SIM_PROXY") == "1":
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 _login_failures = {}
+_db_initialized = False
+_db_init_lock = threading.Lock()
+_simulator_lock = threading.Lock()
 
 
 def now():
@@ -78,7 +82,18 @@ def today_prefix():
     return datetime.now(IST).strftime("%Y-%m-%d")
 
 
+def ensure_db():
+    global _db_initialized
+    if _db_initialized:
+        return
+    with _db_init_lock:
+        if not _db_initialized:
+            init_db()
+            _db_initialized = True
+
+
 def db():
+    ensure_db()
     if "db" not in g:
         parent = os.path.dirname(os.path.abspath(DB_PATH))
         if parent:
@@ -201,6 +216,11 @@ def sync_vault_from_counter_txns(conn):
 
 
 def simulator_auto_tick(conn, force=False):
+    with _simulator_lock:
+        return _simulator_auto_tick(conn, force)
+
+
+def _simulator_auto_tick(conn, force=False):
     if not auto_demo_enabled() and not force:
         return False
     last = get_setting("auto_demo_last_tick")
@@ -769,7 +789,12 @@ def active_account(account_no):
 
 @app.route("/healthz")
 def healthz():
-    db().execute("SELECT 1").fetchone()
+    try:
+        ensure_db()
+        db().execute("SELECT 1").fetchone()
+    except Exception as exc:
+        LOG.exception("health check failed")
+        return jsonify(status="error", detail=str(exc)), 503
     return jsonify(status="ok", branch=BRANCH["ifsc"], service="cbr-udaipur")
 
 
@@ -1659,7 +1684,6 @@ def server_error(error):
     return render_template("error.html", message="The branch system could not complete that action. Try again in a moment."), 500
 
 
-init_db()
 if app.secret_key == "CHANGE-THIS-DEMO-SECRET-KEY":
     LOG.warning("BANK_SIM_SECRET is not set. Set it before a public deployment.")
 
