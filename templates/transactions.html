@@ -1,17 +1,38 @@
-{% extends "base.html" %}{% block title %}Cash transactions{% endblock %}{% block heading %}Cash transactions{% endblock %}
+{% extends "base.html" %}{% block title %}Payments{% endblock %}{% block heading %}Payments{% endblock %}
 {% block content %}
-<div class="page-intro"><div><h1>Payments desk</h1><p>Cash at the teller, and NEFT, IMPS or UPI inside {{ branch.ifsc }}.</p></div><span class="count-pill">Vault {{ vault|money }}</span></div>
-<div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>New payment</h3><p>Cash in multiples of ₹100 · UPI up to ₹1,00,000 · NEFT up to ₹10,00,000</p></div></div>
-<form method="post" class="form-grid">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-<label>Mode<select name="txn_type" required><option value="Deposit">Cash deposit</option><option value="Withdrawal">Cash withdrawal</option><option value="NEFT">NEFT (intra-bank)</option><option value="IMPS">IMPS (intra-bank)</option><option value="UPI">UPI (intra-bank)</option></select></label>
-<label>Account<select name="account_no" required><option value="">Choose account…</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }} · {{ a.account_type }} ({{ a.balance|money }})</option>{% endfor %}</select></label>
-<label class="span-2">Beneficiary account (NEFT, IMPS, UPI)<select name="beneficiary"><option value="">Same-branch account…</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }}</option>{% endfor %}</select></label>
-<label class="span-2">Amount (₹)<input type="number" name="amount" min="1" max="1000000" step="1" placeholder="e.g. 2500" required></label>
-<label class="span-2">Narration<input name="note" maxlength="200" placeholder="Purpose of the payment"></label>
-<div class="span-2"><button class="btn primary">Post payment →</button><p class="muted tiny">IMPS and NEFT carry a ₹5 charge. UPI is free. Cash that the vault cannot pay is declined.</p></div>
-</form></section>
-<section class="panel info-panel"><div class="queue-icon blue">↔</div><h3>Desk rules</h3><ul class="check-list"><li>Ankit posts cash deposits</li><li>Shifa posts cash withdrawals</li><li>Sanket posts NEFT, IMPS and UPI</li><li>Bhavesh can post every mode</li><li>Withdrawal needs balance and vault cash</li><li>Every posting gets a UTR and an audit line</li></ul><div class="note-box"><strong>{{ emp.full_name }} · {{ emp.employee_code }}</strong><p>IFSC {{ branch.ifsc }}. Transfers stay inside this branch.</p></div></section></div>
-<section class="panel table-panel"><div class="panel-head"><div><h3>Transaction history</h3><p>Latest 100 transactions</p></div><a class="text-link" href="{{ url_for('export_report',kind='transactions') }}">Export CSV ↓</a></div>
-<div class="table-scroll"><table><thead><tr><th>UTR</th><th>Customer / Account</th><th>Type</th><th>Channel</th><th>Amount</th><th>Employee</th><th>Time</th></tr></thead><tbody>{% for t in rows %}<tr><td><code>{{ t.txn_ref }}</code></td><td><strong>{{ t.full_name }}</strong><small>{{ t.account_no }}</small></td><td><span class="status {{ 'good' if t.txn_type=='Deposit' else 'warn' }}">{{ t.txn_type }}</span></td><td>{{ t.channel }}</td><td class="amount">{{ t.amount|money }}</td><td>{{ t.employee }}</td><td>{{ t.created_at }}</td></tr>{% else %}<tr><td colspan="7" class="empty">No transactions recorded.</td></tr>{% endfor %}</tbody></table></div></section>
+<div class="page-header"><div><p class="page-lead">Teller vault <strong>{{ vault|money }}</strong> · IFSC {{ branch.ifsc }}</p></div></div>
+
+<section class="panel">
+  <div class="panel-head"><h3>New payment</h3></div>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Payment mode<select name="txn_type" required>
+      <option value="Deposit">Cash deposit</option>
+      <option value="Withdrawal">Cash withdrawal</option>
+      <option value="NEFT">NEFT</option>
+      <option value="IMPS">IMPS</option>
+      <option value="UPI">UPI</option>
+    </select></label>
+    <label>Account<select name="account_no" required><option value="">Select account</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }} ({{ a.balance|money }})</option>{% endfor %}</select></label>
+    <label class="span-2">Beneficiary account<select name="beneficiary"><option value="">For transfers only</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }}</option>{% endfor %}</select></label>
+    <label>Amount (₹)<input type="number" name="amount" min="1" max="1000000" required></label>
+    <label>Narration<input name="note" maxlength="200"></label>
+    <div class="span-2"><button class="btn primary">Post payment</button></div>
+  </form>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-head"><h3>Transaction register</h3><a class="text-link" href="{{ url_for('export_report',kind='transactions') }}">Export CSV</a></div>
+  <div class="table-scroll"><table class="table-comfort"><thead><tr><th>UTR</th><th>Customer</th><th>Type</th><th>Channel</th><th>Amount</th><th>Officer</th><th>Date</th></tr></thead><tbody>
+  {% for t in rows %}<tr>
+    <td><code>{{ t.txn_ref }}</code></td>
+    <td><strong>{{ t.full_name }}</strong><small>{{ t.account_no }}</small></td>
+    <td>{{ t.txn_type }}</td>
+    <td>{{ t.channel }}</td>
+    <td class="amount">{{ t.amount|money }}</td>
+    <td>{{ t.employee }}</td>
+    <td>{{ t.created_at }}</td>
+  </tr>{% else %}<tr><td colspan="7" class="empty">No transactions recorded.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
 {% endblock %}

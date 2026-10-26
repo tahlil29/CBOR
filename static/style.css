@@ -17,21 +17,65 @@ body{background:#f6f8fb}.bank-banner{height:126px;position:relative;display:flex
 @media(max-width:1300px){.dashboard-row,.dashboard-row.second-row{grid-template-columns:1fr 1fr}.cash-panel,.quick-panel{grid-column:auto}.stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.banner-skyline{display:none}}
 @media(max-width:900px){.bank-banner{height:100px;padding:10px}.bank-brand{min-width:0}.bank-brand h1{font-size:18px}.bank-brand h2{font-size:15px}.bank-brand p{font-size:10px}.bank-seal-img{width:50px;height:50px}.banner-user{min-width:150px}.banner-user .banner-time{font-size:8px}.sidebar{top:103px;width:70px}.branch-mini>div,.branch-mini strong,.branch-mini small,.sidebar nav a span:not(.sr-only),.sidebar-city{display:none}.sidebar-bottom .sidebar-logout span{display:none}.branch-mini{justify-content:center;padding:8px 0}.main{margin-left:70px;max-width:calc(100% - 70px)}.topbar{margin-left:-12px;margin-right:-12px;padding:0 14px}.dashboard-row,.dashboard-row.second-row,.profile-layout{grid-template-columns:1fr}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cred-grid{grid-template-columns:repeat(4,1fr)}
-.login-main{background:linear-gradient(135deg,#061b32 0%,#0f3558 45%,#f5f8fc 45%,#f5f8fc 100%);align-items:stretch;padding:0}
+.main.login-main,.login-main{margin:0!important;max-width:100%!important;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;background:#e6edf5;box-sizing:border-box}
 .login-main>footer{display:none}
-.login-shell{display:grid;grid-template-columns:minmax(280px,1fr) minmax(360px,440px);width:min(960px,100%);min-height:100vh;margin:0 auto}
-.login-hero{padding:48px 40px;color:#fff;display:flex;flex-direction:column;justify-content:center}
-.login-hero .eyebrow.light{color:#d7c18e}
-.login-hero h1{font-family:Georgia,serif;font-size:32px;color:#fff;margin:10px 0 6px;letter-spacing:-.5px}
-.login-motto{font-family:Georgia,serif;color:#e8d5a8;font-size:15px;margin-bottom:28px}
-.login-hero-crest{width:96px;height:96px;margin-bottom:18px}
-.login-facts{list-style:none;margin:0 0 22px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.login-facts li{background:#ffffff12;border:1px solid #ffffff22;border-radius:8px;padding:12px}
-.login-facts span{display:block;font-size:9px;letter-spacing:1px;color:#b8d0e6;text-transform:uppercase}
-.login-facts strong{display:block;font-size:13px;color:#fff;margin-top:5px}
-.login-address,.login-hours{font-size:12px;color:#c8d9ea;line-height:1.6;max-width:360px}
-.login-shell .login-card{border-radius:0;box-shadow:none;border:0;border-left:1px solid var(--line);min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:48px 40px}
-.login-shell .login-card h2{font-size:26px;margin:8px 0}
-.login-foot{margin-top:18px}
-@media(max-width:900px){.login-main{background:#f5f8fc}.login-shell{grid-template-columns:1fr;min-height:auto}.login-hero{padding:32px 24px;border-radius:0}.login-shell .login-card{min-height:auto;border-left:0;border-top:1px solid var(--line);padding:28px 24px 36px}}
+.login-main .flash-stack{width:min(1040px,100%);margin:0 auto 14px}
+.login-shell{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr);width:min(1040px,100%);min-height:min(660px,calc(100vh - 56px));border-radius:18px;overflow:hidden;box-shadow:0 28px 70px #061b3230,0 0 0 1px #061b3212;background:#fff}
+.login-hero{padding:40px 36px 36px;color:#fff;display:flex;flex-direction:column;justify-content:center;background:#061b32;min-width:0;border-right:1px solid #1a3d5c}
+.login-hero .eyebrow.light{color:#e4c77d;letter-spacing:2px}
+.login-hero h1{font-family:Georgia,serif;font-size:clamp(22px,2.6vw,32px);color:#fff;margin:12px 0 8px;letter-spacing:-.4px;line-height:1.2;max-width:none}
+.login-motto{font-family:Georgia,serif;color:#f0dfa8;font-size:16px;margin:0 0 22px}
+.login-hero-crest{width:88px;height:88px;margin-bottom:14px;box-shadow:0 0 0 4px #e7c77d66,0 10px 28px #00000040}
+.login-facts{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:1fr;gap:10px}
+.login-facts li{background:#0d2742;border:1px solid #ffffff35;border-radius:10px;padding:12px 14px}
+.login-facts span{display:block;font-size:9px;letter-spacing:1.1px;color:#b9d4ec;text-transform:uppercase;font-weight:700}
+.login-facts strong{display:block;font-size:14px;color:#fff;margin-top:5px;font-weight:700;letter-spacing:.2px;word-break:break-word}
+.login-contact{margin-top:2px;padding:14px 16px;border-radius:10px;background:#041525;border:1px solid #ffffff30;width:100%;box-sizing:border-box}
+.login-address,.login-hours{font-size:12px;color:#f0f6fc;line-height:1.65;margin:0;word-break:break-word}
+.login-hours{margin-top:8px;color:#d4e4f4}
+.login-shell .login-card{border-radius:0;box-shadow:none;border:0;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:48px clamp(28px,4vw,52px);background:#fff}
+.login-shell .login-card h2{font-size:28px;margin:10px 0 8px;color:#10284a}
+.login-shell .login-card .muted{margin-bottom:22px;font-size:13px}
+.login-shell .login-card label{font-size:11px;font-weight:700;color:#4a5f78}
+.login-shell .login-card input{border:1px solid #d5dee8;border-radius:9px;padding:13px 14px;font-size:13px;background:#fafbfd}
+.login-shell .login-card input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px #dbeafe;background:#fff}
+.login-shell .login-card .btn.primary{padding:13px 16px;font-size:12px;margin-top:6px}
+.login-foot{margin-top:20px;text-align:center;line-height:1.5}
+@media(max-width:1024px){.login-main{padding:16px 12px 24px;justify-content:flex-start}.login-shell{grid-template-columns:1fr;min-height:auto;border-radius:14px}.login-hero{border-right:0;border-bottom:1px solid #1a3d5c;padding:28px 22px 24px}.login-shell .login-card{padding:28px 22px 32px}}
 @media(max-width:600px){.bank-brand h1{font-size:14px}.bank-brand h2{font-size:12px}.bank-brand p{display:none}.bank-seal-img{width:44px;height:44px}.banner-user{min-width:auto;grid-template-columns:30px 1fr 14px;gap:5px;padding-left:7px}.profile-avatar{width:30px;height:30px}.banner-user strong{font-size:10px}.banner-user small{font-size:8px}.banner-time{display:none}.main{padding:0 9px 16px}.topbar{height:60px}.topbar h2{font-size:15px}.top-right .date{display:none}.stat-grid{grid-template-columns:1fr 1fr;gap:7px}.stat-card{padding:10px}.stat-value{font-size:17px}.welcome h1{font-size:19px}.branch-pill{font-size:8px}.branch-facts{gap:10px}.admin-inline{flex-wrap:wrap}}
+
+/* Portal layout polish */
+.portal-main{padding:8px 22px 28px}
+.portal-main .topbar{height:auto;min-height:0;padding:6px 0 18px;margin-bottom:4px;border-bottom:1px solid #e2e8f0;background:transparent}
+.portal-main .topbar h2{font-size:22px;margin:0;color:#10284a}
+.portal-main .topbar-sub{display:block;font-size:12px;color:#64748b;margin-top:4px;font-weight:500}
+.page-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 18px;flex-wrap:wrap}
+.page-lead{margin:0;font-size:13px;color:#64748b}
+.page-lead strong{color:#10284a}
+.portal-main .panel{padding:20px 22px;margin-bottom:18px;border-radius:12px}
+.portal-main .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:0}
+.portal-main .panel-head h3{margin:0;font-size:15px;color:#1e3a5f}
+.portal-main .panel-head p{display:none}
+.dashboard-grid{grid-template-columns:1fr 1fr;gap:18px}
+.summary-list{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+.summary-list>div{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #edf2f7;font-size:12px}
+.summary-list>div span{color:#64748b}
+.summary-list>div strong{color:#10284a;font-size:12px}
+.summary-list.tight{margin-top:14px}
+.atm-list.compact .atm-row{padding:10px 0}
+.table-comfort{white-space:normal}
+.table-comfort td,.table-comfort th{white-space:normal;vertical-align:top}
+.table-comfort td small{display:block;margin-top:3px}
+.cell-wrap{max-width:280px;line-height:1.45}
+.compact-cards .atm-card{padding:14px 16px}
+.compact-cards .atm-card-balance{font-size:20px;margin:8px 0}
+.compact-cards .progress,.compact-cards .atm-alert{display:none}
+.centered-panel{max-width:480px;margin:0 auto}
+.portal-main footer{padding-top:18px;margin-top:8px}
+.portal-main .stat-grid{margin-bottom:18px}
+.portal-main .stat-label span{display:none}
+.portal-main .content-grid{gap:18px;margin-bottom:18px}
+.portal-main .form-grid{gap:14px}
+.portal-main .searchbar{margin-bottom:16px}
+.portal-main .report-links a{padding:10px 14px;font-size:11px}
+@media(max-width:900px){.dashboard-grid{grid-template-columns:1fr}.summary-list{grid-template-columns:1fr}}

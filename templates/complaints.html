@@ -1,13 +1,33 @@
-{% extends "base.html" %}{% block title %}Complaints{% endblock %}{% block heading %}Complaints & troubleshooting{% endblock %}
+{% extends "base.html" %}{% block title %}Complaints{% endblock %}{% block heading %}Complaints{% endblock %}
 {% block content %}
-<div class="page-intro"><div><h1>Customer support desk</h1><p>Log issues, assign an owner, and record resolutions.</p></div></div>
-<div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>Log a complaint</h3><p>Customer code is optional for general issues.</p></div></div><form method="post" class="form-grid">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-<label>Customer ID<input name="customer_code" placeholder="CBRCIF000001 (optional)"></label>
-<label>Category<select name="category"><option>ATM issue</option><option>Cash transaction</option><option>Net banking</option><option>KYC verification</option><option>Account service</option><option>Loan / locker</option><option>Other</option></select></label>
-<label class="span-2">Issue details<textarea name="details" rows="3" required placeholder="Describe the demo issue; never enter passwords or OTPs."></textarea></label>
-<label class="span-2">Assigned employee<select name="assigned_to">{% for person in staff %}<option>{{ person.full_name }}</option>{% endfor %}</select></label>
-<div class="span-2"><button class="btn primary">Create support case →</button></div></form></section>
-<section class="panel info-panel"><div class="queue-icon orange">☷</div><h3>Suggested troubleshooting</h3><ul class="check-list"><li>Confirm customer and account code</li><li>Check transaction status and reference</li><li>Check ATM status and cash level</li><li>Review KYC or activation status</li><li>Record the fix and outcome</li><li>Escalate unresolved cases to manager</li></ul></section></div>
-<section class="panel table-panel"><div class="panel-head"><div><h3>Complaint register</h3><p>Latest 100 support cases</p></div></div><div class="table-scroll"><table><thead><tr><th>Case</th><th>Customer</th><th>Category</th><th>Details</th><th>Status</th><th>Assigned to</th><th>Action</th></tr></thead><tbody>{% for c in rows %}<tr><td>#{{ c.id }}<small>{{ c.created_at }}</small></td><td>{{ c.full_name or 'General' }}<small>{{ c.customer_code or '' }}</small></td><td>{{ c.category }}</td><td>{{ c.details }}</td><td><span class="status {{ 'good' if c.status=='Resolved' else 'warn' }}">{{ c.status }}</span></td><td>{{ c.assigned_to }}</td><td>{% if current_employee and current_employee.role in ['manager','admin'] and c.status!='Resolved' %}<form method="post" class="admin-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="resolve_id" value="{{ c.id }}"><button class="btn small success">Close</button></form>{% else %}{{ c.resolution or '—' }}{% endif %}</td></tr>{% else %}<tr><td colspan="7" class="empty">No complaints logged.</td></tr>{% endfor %}</tbody></table></div></section>
+<div class="page-header"><div><p class="page-lead">Customer grievance register and resolution tracking.</p></div></div>
+
+<section class="panel">
+  <div class="panel-head"><h3>Log complaint</h3></div>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Customer ID<input name="customer_code"></label>
+    <label>Category<select name="category"><option>ATM issue</option><option>Cash transaction</option><option>Net banking</option><option>KYC verification</option><option>Account service</option><option>Loan / locker</option><option>Other</option></select></label>
+    <label class="span-2">Details<textarea name="details" rows="3" required></textarea></label>
+    <label>Assign to<select name="assigned_to">{% for person in staff %}<option>{{ person.full_name }}</option>{% endfor %}</select></label>
+    <div class="span-2"><button class="btn primary">Save complaint</button></div>
+  </form>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-head"><h3>Complaint register</h3></div>
+  <div class="table-scroll"><table class="table-comfort"><thead><tr><th>ID</th><th>Customer</th><th>Category</th><th>Details</th><th>Status</th><th>Assigned</th><th></th></tr></thead><tbody>
+  {% for c in rows %}<tr>
+    <td>#{{ c.id }}</td>
+    <td>{{ c.full_name or 'General' }}<small>{{ c.customer_code or '' }}</small></td>
+    <td>{{ c.category }}</td>
+    <td class="cell-wrap">{{ c.details }}</td>
+    <td><span class="status {{ 'good' if c.status=='Resolved' else 'warn' }}">{{ c.status }}</span></td>
+    <td>{{ c.assigned_to }}</td>
+    <td>{% if current_employee and current_employee.role in ['manager','admin'] and c.status!='Resolved' %}
+      <form method="post" class="admin-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="resolve_id" value="{{ c.id }}"><button class="btn small success">Close</button></form>
+    {% else %}—{% endif %}</td>
+  </tr>{% else %}<tr><td colspan="7" class="empty">No complaints logged.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
 {% endblock %}

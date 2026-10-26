@@ -1,1 +1,27 @@
-{% extends "base.html" %}{% block title %}Employee Profile{% endblock %}{% block heading %}Employee Profile{% endblock %}{% block content %}<div class="page-intro"><div><h1>Employee Profile</h1><p>Review and update your basic employee details.</p></div><span class="branch-pill">{{ emp.employee_code or emp.username|upper }}</span></div><div class="profile-layout"><section class="panel profile-card"><div class="profile-hero"><div class="profile-avatar big-avatar">{{ emp.full_name[0]|upper }}</div><div><h2>{{ emp.full_name }}</h2><p>{{ emp.rank }} · {{ emp.department }}</p><span class="status good">Active employee</span></div></div><div class="profile-facts"><div><small>EMPLOYEE CODE</small><strong>{{ emp.employee_code or '—' }}</strong></div><div><small>RANK / DESIGNATION</small><strong>{{ emp.rank }}</strong></div><div><small>DEPARTMENT</small><strong>{{ emp.department }}</strong></div><div><small>BRANCH IFSC</small><strong>{{ branch.ifsc }}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Basic Details</h3><p>Keep your employee profile current.</p></div></div><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>Full name<input name="full_name" value="{{ emp.full_name }}" required></label><label>Work email<input type="email" name="email" value="{{ emp.email or '' }}" placeholder="name@cbofr.gov.in"></label><label class="span-2">Contact number<input name="phone" value="{{ emp.phone or '' }}" placeholder="Optional demo contact number"></label><div class="span-2"><button class="btn primary">Save profile</button></div></form></section></div>{% endblock %}
+{% extends "base.html" %}{% block title %}Profile{% endblock %}{% block heading %}My Profile{% endblock %}
+{% block content %}
+<div class="profile-layout">
+  <section class="panel profile-card">
+    <div class="profile-hero">
+      <div class="profile-avatar big-avatar">{{ emp.full_name[0]|upper }}</div>
+      <div><h2>{{ emp.full_name }}</h2><p>{{ emp.rank }}</p><p class="muted">{{ emp.department }}</p></div>
+    </div>
+    <div class="profile-facts">
+      <div><small>Employee code</small><strong>{{ emp.employee_code or '—' }}</strong></div>
+      <div><small>Username</small><strong>{{ emp.username }}</strong></div>
+      <div><small>Email</small><strong>{{ emp.email or '—' }}</strong></div>
+      <div><small>Phone</small><strong>{{ emp.phone or '—' }}</strong></div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h3>Edit details</h3></div>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Full name<input name="full_name" value="{{ emp.full_name }}" required></label>
+      <label>Work email<input type="email" name="email" value="{{ emp.email or '' }}" placeholder="name@cbofr.gov.in"></label>
+      <label class="span-2">Contact number<input name="phone" value="{{ emp.phone or '' }}"></label>
+      <div class="span-2"><button class="btn primary">Save changes</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

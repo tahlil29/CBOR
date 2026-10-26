@@ -1,8 +1,22 @@
-{% extends "base.html" %}{% block title %}Customers{% endblock %}{% block heading %}Customer directory{% endblock %}
+{% extends "base.html" %}{% block title %}Customers{% endblock %}{% block heading %}Customers{% endblock %}
 {% block content %}
-<div class="page-intro"><div><h1>Customer directory</h1><p>1,000 fictional customers of {{ branch.branch }}. Search by name, CIF, account or mobile.</p></div><span class="count-pill">IFSC {{ branch.ifsc }}</span></div>
-<section class="panel"><form class="searchbar" method="get"><input name="q" value="{{ q }}" placeholder="Name, CIF, account number or mobile"><button class="btn primary">Search</button><a class="btn ghost" href="{{ url_for('customers') }}">Reset</a></form>
-<div class="table-scroll"><table><thead><tr><th>Customer</th><th>CIF</th><th>Account</th><th>Product</th><th>Balance</th><th>KYC</th><th>Status</th></tr></thead><tbody>
-{% for c in rows %}<tr><td><strong>{{ c.full_name }}</strong><small>{{ c.phone or '—' }} · {{ c.city }} {{ c.pincode or '' }}</small></td><td><code>{{ c.customer_code }}</code><small>{{ c.pan_masked or '' }}</small></td><td>{{ c.account_no or 'No account' }}<small>{{ c.ifsc or branch.ifsc }}</small></td><td>{{ c.account_type or '—' }}</td><td class="amount">{{ c.balance|money if c.balance is not none else '—' }}</td><td><span class="status {{ 'good' if c.kyc_status=='Verified' else 'bad' if c.kyc_status=='Rejected' else 'warn' }}">{{ c.kyc_status or 'Pending' }}</span></td><td><span class="status {{ 'good' if c.account_status=='Active' else 'muted-status' }}">{{ c.account_status or 'No account' }}</span></td></tr>{% else %}<tr><td colspan="7" class="empty">No customers match that search.</td></tr>{% endfor %}
-</tbody></table></div><p class="table-foot">Showing up to 100 records per view. Use search to locate a specific customer.</p></section>
+<div class="page-header"><div><p class="page-lead">Search by name, CIF, account or mobile.</p></div></div>
+<section class="panel">
+  <form class="searchbar" method="get">
+    <input name="q" value="{{ q }}" placeholder="Search customers">
+    <button class="btn primary">Search</button>
+    <a class="btn ghost" href="{{ url_for('customers') }}">Clear</a>
+  </form>
+  <div class="table-scroll"><table class="table-comfort"><thead><tr><th>Customer</th><th>CIF</th><th>Account</th><th>Balance</th><th>KYC</th><th>Status</th></tr></thead><tbody>
+  {% for c in rows %}<tr>
+    <td><strong>{{ c.full_name }}</strong><small>{{ c.phone or '—' }} · {{ c.city }}</small></td>
+    <td><code>{{ c.customer_code }}</code></td>
+    <td>{{ c.account_no or '—' }}<small>{{ c.account_type or '' }}</small></td>
+    <td class="amount">{{ c.balance|money if c.balance is not none else '—' }}</td>
+    <td><span class="status {{ 'good' if c.kyc_status=='Verified' else 'bad' if c.kyc_status=='Rejected' else 'warn' }}">{{ c.kyc_status }}</span></td>
+    <td><span class="status {{ 'good' if c.account_status=='Active' else 'muted-status' }}">{{ c.account_status or '—' }}</span></td>
+  </tr>{% else %}<tr><td colspan="6" class="empty">No matching customers.</td></tr>{% endfor %}
+  </tbody></table></div>
+  <p class="table-foot">Showing up to 100 records.</p>
+</section>
 {% endblock %}

@@ -1,17 +1,39 @@
-{% extends "base.html" %}{% block title %}ATM management{% endblock %}{% block heading %}ATM management{% endblock %}
+{% extends "base.html" %}{% block title %}ATMs{% endblock %}{% block heading %}ATM Management{% endblock %}
 {% block content %}
-<div class="page-intro"><div><h1>ATM network</h1><p>Monitor cash levels, thresholds, service status and cash movements across six machines.</p></div><a class="btn ghost" href="{{ url_for('export_report',kind='atms') }}">Export ATM CSV ↓</a></div>
-<div class="atm-cards">{% for a in rows %}<div class="atm-card"><div class="atm-card-top"><div class="atm-symbol big">▣</div><span class="status {{ 'good' if a.status=='Online' else 'bad' }}">{{ a.status }}</span></div><h3>{{ a.atm_id }}</h3><p>{{ a.location }}</p><div class="atm-card-balance">{{ a.cash_balance|money }}</div><small>Alert threshold {{ a.threshold|money }}</small><div class="progress"><span style="width:{{ [100, (a.cash_balance / 400000 * 100)|int]|min }}%"></span></div><div class="atm-alert {{ 'alert-red' if a.cash_balance==0 else 'alert-amber' if a.cash_balance<=a.threshold else 'alert-green' }}">{{ 'URGENT · Replenishment required' if a.cash_balance==0 else 'LOW CASH · Review request' if a.cash_balance<=a.threshold else 'Cash level normal' }}</div></div>{% endfor %}</div>
-<div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>Record ATM action</h3><p>Jyoti submits cash requests; Bhavesh records approved movements.</p></div></div>
-<form method="post" class="form-grid">
-<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-<label>ATM<select name="atm_id">{% for a in rows %}<option>{{ a.atm_id }}</option>{% endfor %}</select></label>
-<label>Action<select name="movement_type"><option>Replenishment</option><option>Cash Collection</option><option>Service Update</option></select></label>
-<label>Amount (₹)<input type="number" name="amount" min="0" max="2000000" value="0"></label>
-<label>Machine status (for service update)<select name="atm_status"><option>Online</option><option>Offline</option><option>Maintenance</option></select></label>
-<label class="span-2">Notes<input name="note" placeholder="Cash request, fault or service notes"></label>
-<div class="span-2"><button class="btn primary">Submit / record action →</button></div>
-</form></section>
-<section class="panel"><div class="panel-head"><div><h3>Pending ATM cash requests</h3><p>Awaiting manager approval</p></div></div>{% for p in pending %}<div class="mini-record"><strong>#{{ p.id }} · {{ p.title }}</strong><span>{{ p.requested_amount|money }}</span><small>{{ p.assigned_to }} · {{ p.created_at }}</small></div>{% else %}<p class="empty">No pending ATM cash requests.</p>{% endfor %}{% if session.get('username')=='bhavesh' %}<a class="btn ghost full" href="{{ url_for('approvals') }}">Review approvals →</a>{% endif %}</section></div>
-<section class="panel table-panel"><div class="panel-head"><div><h3>ATM movement log</h3><p>Replenishment, collection and service actions</p></div></div><div class="table-scroll"><table><thead><tr><th>ATM</th><th>Action</th><th>Amount</th><th>Employee</th><th>Approved by</th><th>Time</th></tr></thead><tbody>{% for m in movements %}<tr><td>{{ m.atm_id }}</td><td>{{ m.movement_type }}</td><td>{{ m.amount|money }}</td><td>{{ m.employee }}</td><td>{{ m.approved_by or 'Pending / N/A' }}</td><td>{{ m.created_at }}</td></tr>{% else %}<tr><td colspan="6" class="empty">No ATM movements recorded.</td></tr>{% endfor %}</tbody></table></div></section>
+<div class="page-header"><div><p class="page-lead">Cash levels and service status across the branch network.</p></div><a class="btn ghost" href="{{ url_for('export_report',kind='atms') }}">Export CSV</a></div>
+
+<div class="atm-cards compact-cards">{% for a in rows %}
+  <div class="atm-card"><div class="atm-card-top"><strong>{{ a.atm_id }}</strong><span class="status {{ 'good' if a.status=='Online' else 'bad' }}">{{ a.status }}</span></div>
+  <p>{{ a.location }}</p><div class="atm-card-balance">{{ a.cash_balance|money }}</div>
+  <small>Threshold {{ a.threshold|money }}</small></div>
+{% endfor %}</div>
+
+<div class="content-grid">
+  <section class="panel">
+    <div class="panel-head"><h3>Record action</h3></div>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>ATM<select name="atm_id">{% for a in rows %}<option>{{ a.atm_id }}</option>{% endfor %}</select></label>
+      <label>Action<select name="movement_type"><option>Replenishment</option><option>Cash Collection</option><option>Service Update</option></select></label>
+      <label>Amount<input type="number" name="amount" min="0" max="2000000" value="0"></label>
+      <label>Status<select name="atm_status"><option>Online</option><option>Offline</option><option>Maintenance</option></select></label>
+      <label class="span-2">Notes<input name="note"></label>
+      <div class="span-2"><button class="btn primary">Save</button></div>
+    </form>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h3>Pending cash requests</h3></div>
+    {% for p in pending %}<div class="mini-record"><strong>{{ p.title }}</strong><span>{{ p.requested_amount|money }}</span><small>{{ p.assigned_to }}</small></div>
+    {% else %}<p class="empty">No pending requests.</p>{% endfor %}
+  </section>
+</div>
+
+<section class="panel table-panel">
+  <div class="panel-head"><h3>Movement log</h3></div>
+  <div class="table-scroll"><table class="table-comfort"><thead><tr><th>ATM</th><th>Action</th><th>Amount</th><th>Officer</th><th>Approved</th><th>Date</th></tr></thead><tbody>
+  {% for m in movements %}<tr>
+    <td>{{ m.atm_id }}</td><td>{{ m.movement_type }}</td><td>{{ m.amount|money }}</td><td>{{ m.employee }}</td><td>{{ m.approved_by or '—' }}</td><td>{{ m.created_at[:10] }}</td>
+  </tr>{% else %}<tr><td colspan="6" class="empty">No movements recorded.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
 {% endblock %}
