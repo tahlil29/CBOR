@@ -158,6 +158,105 @@ def make_utr():
     return "CBRU" + datetime.now(IST).strftime("%y%m%d%H%M%S%f")[:16]
 
 
+AUTO_DEMO_USER = "bhavesh"
+AUTO_DEMO_TICK_SECONDS = 90
+
+
+def get_setting(key, default=""):
+    try:
+        row = db().execute("SELECT value FROM branch_settings WHERE key=?", (key,)).fetchone()
+    except sqlite3.OperationalError:
+        return default
+    return row["value"] if row else default
+
+
+def set_setting(conn, key, value):
+    conn.execute(
+        "INSERT INTO branch_settings(key,value) VALUES(?,?) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (key, str(value)),
+    )
+
+
+def auto_demo_enabled():
+    return get_setting("auto_demo_mode") == "1"
+
+
+def sync_vault_from_counter_txns(conn):
+    today = today_prefix() + "%"
+    cash_in = conn.execute(
+        """SELECT COALESCE(SUM(amount),0) FROM transactions
+           WHERE txn_type='Deposit' AND channel='Branch Counter' AND created_at LIKE ?""",
+        (today,),
+    ).fetchone()[0]
+    cash_out = conn.execute(
+        """SELECT COALESCE(SUM(amount),0) FROM transactions
+           WHERE txn_type='Withdrawal' AND channel='Branch Counter' AND created_at LIKE ?""",
+        (today,),
+    ).fetchone()[0]
+    conn.execute(
+        "UPDATE branch_vault SET cash_balance=?, updated_at=? WHERE id=1",
+        (max(500_000, VAULT_OPENING + cash_in - cash_out), now()),
+    )
+
+
+def simulator_auto_tick(conn, force=False):
+    if not auto_demo_enabled() and not force:
+        return False
+    last = get_setting("auto_demo_last_tick")
+    if not force and last:
+        try:
+            last_dt = datetime.strptime(last, "%Y-%m-%d %H:%M:%S").replace(tzinfo=IST)
+            if (datetime.now(IST) - last_dt).total_seconds() < AUTO_DEMO_TICK_SECONDS:
+                return False
+        except ValueError:
+            pass
+    rng = random.Random(int(time.time()) // AUTO_DEMO_TICK_SECONDS)
+    officers = ["Ankit Sharma", "Shifa Khan", "Bhavesh Mehta", "Sanket Joshi"]
+    accounts = conn.execute(
+        "SELECT id, balance FROM accounts WHERE status='Active' ORDER BY RANDOM() LIMIT 4"
+    ).fetchall()
+    for acc in accounts[: rng.randint(1, min(3, len(accounts)))]:
+        typ = rng.choice(["Deposit", "Deposit", "Withdrawal"])
+        amount = rng.randrange(500, 8_000, 100)
+        balance = conn.execute("SELECT balance FROM accounts WHERE id=?", (acc["id"],)).fetchone()[0]
+        if typ == "Withdrawal" and balance < amount:
+            typ = "Deposit"
+        delta = amount if typ == "Deposit" else -amount
+        ref = make_utr()
+        conn.execute("UPDATE accounts SET balance=balance+? WHERE id=?", (delta, acc["id"]))
+        conn.execute(
+            """INSERT INTO transactions(txn_ref,account_id,txn_type,amount,channel,employee,note,created_at)
+               VALUES(?,?,?,?,?,?,?,?)""",
+            (ref, acc["id"], typ, amount, "Branch Counter", rng.choice(officers), "Live simulator refresh", now()),
+        )
+        conn.execute(
+            """INSERT INTO cash_ledger(direction,amount,source,reference,employee,created_at)
+               VALUES(?,?,?,?,?,?)""",
+            ("IN" if typ == "Deposit" else "OUT", amount, "Simulator " + typ, ref, "System", now()),
+        )
+    for atm in conn.execute("SELECT atm_id, cash_balance FROM atms").fetchall():
+        change = rng.randint(-12_000, 15_000)
+        new_bal = max(0, min(int(atm["cash_balance"]) + change, 950_000))
+        conn.execute("UPDATE atms SET cash_balance=? WHERE atm_id=?", (new_bal, atm["atm_id"]))
+    sync_vault_from_counter_txns(conn)
+    set_setting(conn, "auto_demo_last_tick", now())
+    conn.commit()
+    return True
+
+
+def auto_demo_sign_in():
+    emp = db().execute("SELECT username FROM employees WHERE username=?", (AUTO_DEMO_USER,)).fetchone()
+    if not emp:
+        return False
+    session.clear()
+    session["_csrf"] = secrets.token_hex(32)
+    session.permanent = True
+    session["username"] = AUTO_DEMO_USER
+    session["auto_demo_session"] = True
+    return True
+
+
 def init_db():
     parent = os.path.dirname(os.path.abspath(DB_PATH))
     if parent:
@@ -232,7 +331,14 @@ def init_db():
       id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, action TEXT NOT NULL,
       entity_type TEXT NOT NULL, entity_id TEXT, details TEXT, created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS branch_settings(
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
     """)
+    conn.execute(
+        "INSERT OR IGNORE INTO branch_settings(key,value) VALUES('auto_demo_mode','0'),('auto_demo_last_tick','')"
+    )
     for col, definition in (
         ("rank", "TEXT NOT NULL DEFAULT 'Officer'"),
         ("email", "TEXT DEFAULT ''"),
@@ -541,7 +647,26 @@ def inject_template_globals():
         "csrf_token": session.get("_csrf", ""),
         "current_employee": emp,
         "current_role": emp["department"] if emp else "",
+        "auto_demo_mode": auto_demo_enabled(),
+        "auto_demo_last_tick": get_setting("auto_demo_last_tick"),
     }
+
+
+@app.before_request
+def handle_auto_demo():
+    if request.endpoint in (None, "static", "healthz"):
+        return None
+    if auto_demo_enabled():
+        try:
+            simulator_auto_tick(db())
+        except Exception:
+            LOG.exception("simulator auto tick failed")
+        if not session.get("username") and request.method == "GET":
+            if request.endpoint in ("home", "demo_enter"):
+                if auto_demo_sign_in():
+                    audit("AUTO_DEMO_LOGIN", "session", AUTO_DEMO_USER, "Auto demo workspace entry")
+                return redirect(url_for("dashboard"))
+    return None
 
 
 @app.before_request
@@ -653,6 +778,14 @@ def home():
     return redirect(url_for("dashboard") if session.get("username") else url_for("login"))
 
 
+@app.route("/demo/enter")
+def demo_enter():
+    if not auto_demo_enabled():
+        flash("Auto demo is off. Sign in with your employee ID and password.", "error")
+        return redirect(url_for("login"))
+    return redirect(url_for("home"))
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -669,6 +802,7 @@ def login():
             session["_csrf"] = secrets.token_hex(32)
             session.permanent = True
             session["username"] = username
+            session.pop("auto_demo_session", None)
             audit("LOGIN", "session", username, "Employee signed in")
             return redirect(url_for("dashboard"))
         _login_failures.setdefault(ip, []).append(time.time())
@@ -1370,7 +1504,25 @@ def admin_section():
         action = request.form.get("action", "")
         username = request.form.get("username", "").strip().lower()
 
-        if action == "create":
+        if action == "toggle_auto_demo":
+            enabled = request.form.get("enabled") == "1"
+            set_setting(conn, "auto_demo_mode", "1" if enabled else "0")
+            if enabled:
+                simulator_auto_tick(conn, force=True)
+                audit("AUTO_DEMO_ON", "settings", "auto_demo_mode", "Live simulator enabled")
+                flash("Auto demo is ON. Visitors enter without a password; data refreshes about every 90 seconds.", "success")
+            else:
+                set_setting(conn, "auto_demo_last_tick", "")
+                conn.commit()
+                audit("AUTO_DEMO_OFF", "settings", "auto_demo_mode", "Password login required")
+                flash("Auto demo is OFF. Employees must sign in with user ID and password.", "success")
+        elif action == "simulator_refresh":
+            if simulator_auto_tick(conn, force=True):
+                audit("SIMULATOR_REFRESH", "settings", "manual", "Admin triggered data refresh")
+                flash("Branch balances and activity refreshed.", "success")
+            else:
+                flash("Could not refresh simulator data.", "error")
+        elif action == "create":
             full_name = request.form.get("full_name", "").strip()[:100]
             role = request.form.get("role", "")
             new_username = request.form.get("new_username", "").strip().lower()
@@ -1461,7 +1613,15 @@ def admin_section():
         connector="WHERE",
     )
     employees = conn.execute(emp_sql + where + " ORDER BY employee_code", params).fetchall()
-    return render_template("admin.html", employees=employees, role_desks=ROLE_DESKS, q=q)
+    return render_template(
+        "admin.html",
+        employees=employees,
+        role_desks=ROLE_DESKS,
+        q=q,
+        auto_demo_on=auto_demo_enabled(),
+        auto_demo_last_tick=get_setting("auto_demo_last_tick"),
+        auto_demo_user=AUTO_DEMO_USER,
+    )
 
 
 @app.route("/change-password", methods=["GET", "POST"])

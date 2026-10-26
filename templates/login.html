@@ -21,6 +21,12 @@
     <span class="eyebrow">SECURE EMPLOYEE PORTAL</span>
     <h2>Sign in</h2>
     <p class="muted">Use your branch user ID and password issued by IT administration.</p>
+    {% if auto_demo_mode %}
+    <div class="demo-auto-callout">
+      <p><strong>Auto demo is running.</strong> Open the portal without signing in, or use your own ID below.</p>
+      <a class="btn primary full" href="{{ url_for('demo_enter') }}">Enter demo workspace →</a>
+    </div>
+    {% endif %}
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label>User ID</label>

@@ -2,6 +2,27 @@
 {% block content %}
 <div class="page-header"><div><p class="page-lead">Manage branch employee accounts and access.</p></div></div>
 
+<section class="panel auto-demo-panel">
+  <div class="panel-head"><h3>Live simulator</h3>
+    <span class="status {{ 'good' if auto_demo_on else 'muted-status' }}">{{ 'AUTO ON' if auto_demo_on else 'SECURE LOGIN' }}</span>
+  </div>
+  <p class="page-lead">When <strong>auto demo</strong> is on, opening the site signs visitors in as branch manager <code>{{ auto_demo_user }}</code>, posts sample counter activity, and refreshes vault and ATM balances about every 90 seconds. When off, everyone must use employee ID and password.</p>
+  <div class="auto-demo-actions">
+    <form method="post" class="admin-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="toggle_auto_demo">
+      <input type="hidden" name="enabled" value="{{ '0' if auto_demo_on else '1' }}">
+      <button type="submit" class="btn {{ 'danger' if auto_demo_on else 'primary' }}">{{ 'Turn auto demo OFF' if auto_demo_on else 'Turn auto demo ON' }}</button>
+    </form>
+    <form method="post" class="admin-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="simulator_refresh">
+      <button type="submit" class="btn ghost">Refresh data now</button>
+    </form>
+  </div>
+  {% if auto_demo_last_tick %}<p class="muted tiny">Last refresh: {{ auto_demo_last_tick }}</p>{% endif %}
+</section>
+
 <section class="panel">
   <div class="panel-head"><h3>Add employee</h3></div>
   <form method="post" class="form-grid admin-create">
