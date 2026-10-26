@@ -2,6 +2,7 @@
 {% block content %}
 <div class="page-header"><div><p class="page-lead">Pending requests from branch desks.</p></div></div>
 <section class="panel table-panel">
+  {% with placeholder='Search request, customer, details, officer' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>Request</th><th>Customer</th><th>Details</th><th>Amount</th><th>Officer</th><th>Decision</th></tr></thead><tbody>
   {% for r in rows %}<tr>
     <td><strong>#{{ r.id }}</strong><small>{{ r.case_type }}</small></td>

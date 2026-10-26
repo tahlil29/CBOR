@@ -607,6 +607,35 @@ def parse_amount(raw):
         return 0
 
 
+def search_q():
+    return request.args.get("q", "").strip()[:80]
+
+
+def like_pattern(q):
+    escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+def sql_like_filter(columns, q, connector="AND"):
+    like = like_pattern(q) if q else None
+    if not like:
+        return "", []
+    clause = " OR ".join(f"{col} LIKE ? ESCAPE '\\'" for col in columns)
+    return f" {connector} ({clause})", [like] * len(columns)
+
+
+def filter_rows(rows, q, fields):
+    if not q:
+        return rows
+    needle = q.lower()
+    out = []
+    for row in rows:
+        hay = " ".join(str(row[f] or "") for f in fields).lower()
+        if needle in hay:
+            out.append(row)
+    return out
+
+
 def active_account(account_no):
     return db().execute(
         "SELECT * FROM accounts WHERE account_no=? AND status='Active'", (account_no.strip(),)
@@ -699,24 +728,22 @@ def dashboard():
 @app.route("/customers")
 @login_required
 def customers():
-    q = request.args.get("q", "").strip()[:80]
+    q = search_q()
     base = """SELECT c.*, a.account_no, a.balance, a.account_type, a.status account_status, a.ifsc
               FROM customers c
               LEFT JOIN accounts a ON a.id = (
                 SELECT id FROM accounts WHERE customer_id=c.id
                 ORDER BY CASE status WHEN 'Active' THEN 0 ELSE 1 END, id LIMIT 1
               )"""
-    if q:
-        escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        like = f"%{escaped}%"
-        rows = db().execute(
-            base + """ WHERE c.full_name LIKE ? ESCAPE '\\' OR c.customer_code LIKE ? ESCAPE '\\'
-                       OR a.account_no LIKE ? ESCAPE '\\' OR c.phone LIKE ? ESCAPE '\\'
-                       ORDER BY c.id DESC LIMIT 100""",
-            (like, like, like, like),
-        ).fetchall()
-    else:
-        rows = db().execute(base + " ORDER BY c.id LIMIT 100").fetchall()
+    where, params = sql_like_filter(
+        ["c.full_name", "c.customer_code", "a.account_no", "c.phone", "c.email", "c.city"],
+        q,
+        connector="WHERE",
+    )
+    rows = db().execute(
+        base + where + " ORDER BY c.id DESC LIMIT 100",
+        params,
+    ).fetchall()
     return render_template("customers.html", rows=rows, q=q)
 
 
@@ -802,18 +829,22 @@ def transactions():
         audit(typ, "transaction", utr, f"{account['account_no']} to {beneficiary['account_no']}; amount {amount}")
         flash(f"{typ} settled inside the branch. UTR {utr}", "success")
         return redirect(url_for("transactions"))
-    rows = db().execute(
-        """SELECT t.*, a.account_no, c.full_name FROM transactions t
-           JOIN accounts a ON a.id=t.account_id JOIN customers c ON c.id=a.customer_id
-           ORDER BY t.id DESC LIMIT 100"""
-    ).fetchall()
+    q = search_q()
+    txn_sql = """SELECT t.*, a.account_no, c.full_name FROM transactions t
+                 JOIN accounts a ON a.id=t.account_id JOIN customers c ON c.id=a.customer_id"""
+    where, params = sql_like_filter(
+        ["t.txn_ref", "c.full_name", "a.account_no", "t.txn_type", "t.channel", "t.employee", "t.note"],
+        q,
+        connector="WHERE",
+    )
+    rows = db().execute(txn_sql + where + " ORDER BY t.id DESC LIMIT 100", params).fetchall()
     accounts = db().execute(
         """SELECT a.account_no, a.account_type, c.full_name, a.balance FROM accounts a
            JOIN customers c ON c.id=a.customer_id WHERE a.status='Active'
            ORDER BY a.account_no LIMIT 500"""
     ).fetchall()
     vault = db().execute("SELECT cash_balance FROM branch_vault WHERE id=1").fetchone()
-    return render_template("transactions.html", rows=rows, accounts=accounts, emp=emp, vault=vault["cash_balance"])
+    return render_template("transactions.html", rows=rows, accounts=accounts, emp=emp, vault=vault["cash_balance"], q=q)
 
 
 @app.route("/accounts", methods=["GET", "POST"])
@@ -879,12 +910,17 @@ def account_cases():
         audit("CREATE_REQUEST", "case", cur.lastrowid, typ)
         flash("Request is with the branch manager.", "success")
         return redirect(url_for("account_cases"))
-    cases = db().execute(
-        """SELECT cases.*, customers.customer_code, customers.full_name FROM cases
-           LEFT JOIN customers ON customers.id=cases.customer_id
-           WHERE case_type IN ('Account Opening','Account Closing') ORDER BY cases.id DESC LIMIT 100"""
-    ).fetchall()
-    return render_template("accounts.html", cases=cases, emp=emp)
+    q = search_q()
+    case_sql = """SELECT cases.*, customers.customer_code, customers.full_name FROM cases
+                  LEFT JOIN customers ON customers.id=cases.customer_id
+                  WHERE case_type IN ('Account Opening','Account Closing')"""
+    filt, params = sql_like_filter(
+        ["CAST(cases.id AS TEXT)", "cases.case_type", "customers.full_name", "customers.customer_code",
+         "cases.status", "cases.assigned_to", "cases.details"],
+        q,
+    )
+    cases = db().execute(case_sql + filt + " ORDER BY cases.id DESC LIMIT 100", params).fetchall()
+    return render_template("accounts.html", cases=cases, emp=emp, q=q)
 
 
 @app.route("/kyc", methods=["GET", "POST"])
@@ -914,11 +950,16 @@ def kyc():
         audit("KYC_UPDATE", "kyc", cur.lastrowid, f"{code}: {status}")
         flash("KYC record saved.", "success")
         return redirect(url_for("kyc"))
-    rows = db().execute(
-        """SELECT k.*, c.customer_code, c.full_name FROM kyc_records k
-           JOIN customers c ON c.id=k.customer_id ORDER BY k.id DESC LIMIT 100"""
-    ).fetchall()
-    return render_template("kyc.html", rows=rows, emp=emp)
+    q = search_q()
+    kyc_sql = """SELECT k.*, c.customer_code, c.full_name FROM kyc_records k
+                 JOIN customers c ON c.id=k.customer_id"""
+    where, params = sql_like_filter(
+        ["c.full_name", "c.customer_code", "k.doc_type", "k.masked_ref", "k.status", "k.checked_by", "k.note"],
+        q,
+        connector="WHERE",
+    )
+    rows = db().execute(kyc_sql + where + " ORDER BY k.id DESC LIMIT 100", params).fetchall()
+    return render_template("kyc.html", rows=rows, emp=emp, q=q)
 
 
 @app.route("/atms", methods=["GET", "POST"])
@@ -970,12 +1011,26 @@ def atms():
         audit("ATM_MOVEMENT", "atm", atm_id, f"{typ} amount {amount}")
         flash("ATM record updated.", "success")
         return redirect(url_for("atms"))
-    rows = db().execute("SELECT * FROM atms ORDER BY atm_id").fetchall()
-    movements = db().execute("SELECT * FROM atm_movements ORDER BY id DESC LIMIT 50").fetchall()
-    pending = db().execute(
+    q = search_q()
+    atm_sql = "SELECT * FROM atms"
+    where, params = sql_like_filter(
+        ["atm_id", "location", "status", "CAST(cash_balance AS TEXT)"],
+        q,
+        connector="WHERE",
+    )
+    rows = db().execute(atm_sql + where + " ORDER BY atm_id", params).fetchall()
+    mov_sql = "SELECT * FROM atm_movements"
+    mov_where, mov_params = sql_like_filter(
+        ["atm_id", "movement_type", "employee", "approved_by", "note", "CAST(amount AS TEXT)"],
+        q,
+        connector="WHERE",
+    )
+    movements = db().execute(mov_sql + mov_where + " ORDER BY id DESC LIMIT 50", mov_params).fetchall()
+    pending_all = db().execute(
         "SELECT * FROM cases WHERE case_type IN ('ATM Replenishment','ATM Cash Collection','ATM Cash Replenishment','ATM Cash Cash Collection') AND status='Pending' ORDER BY id DESC"
     ).fetchall()
-    return render_template("atms.html", rows=rows, movements=movements, pending=pending, emp=emp)
+    pending = filter_rows(pending_all, q, ["title", "details", "assigned_to", "case_type"])
+    return render_template("atms.html", rows=rows, movements=movements, pending=pending, emp=emp, q=q)
 
 
 @app.route("/services", methods=["GET", "POST"])
@@ -1014,17 +1069,25 @@ def services():
         audit("SERVICE_REQUEST", "case", cur.lastrowid, typ + " for " + code)
         flash("Request submitted for the branch manager.", "success")
         return redirect(url_for("services"))
-    cases = db().execute(
-        """SELECT cases.*, customers.customer_code, customers.full_name FROM cases
-           LEFT JOIN customers ON customers.id=cases.customer_id
-           WHERE case_type IN ('Loan Application','Locker Request','Cheque Book','E-Banking Support','Other Verification')
-           ORDER BY cases.id DESC LIMIT 100"""
-    ).fetchall()
-    lockers = db().execute(
-        """SELECT l.*, c.customer_code, c.full_name FROM lockers l
-           LEFT JOIN customers c ON c.id=l.customer_id ORDER BY l.locker_id"""
-    ).fetchall()
-    return render_template("services.html", cases=cases, lockers=lockers, emp=emp)
+    q = search_q()
+    case_sql = """SELECT cases.*, customers.customer_code, customers.full_name FROM cases
+                  LEFT JOIN customers ON customers.id=cases.customer_id
+                  WHERE case_type IN ('Loan Application','Locker Request','Cheque Book','E-Banking Support','Other Verification')"""
+    filt, params = sql_like_filter(
+        ["CAST(cases.id AS TEXT)", "cases.case_type", "customers.full_name", "customers.customer_code",
+         "cases.status", "cases.assigned_to", "cases.details"],
+        q,
+    )
+    cases = db().execute(case_sql + filt + " ORDER BY cases.id DESC LIMIT 100", params).fetchall()
+    locker_sql = """SELECT l.*, c.customer_code, c.full_name FROM lockers l
+                    LEFT JOIN customers c ON c.id=l.customer_id"""
+    lock_where, lock_params = sql_like_filter(
+        ["l.locker_id", "l.size", "l.status", "c.customer_code", "c.full_name"],
+        q,
+        connector="WHERE",
+    )
+    lockers = db().execute(locker_sql + lock_where + " ORDER BY l.locker_id", lock_params).fetchall()
+    return render_template("services.html", cases=cases, lockers=lockers, emp=emp, q=q)
 
 
 def apply_approval(conn, case, decision, note, manager_name):
@@ -1139,12 +1202,17 @@ def approvals():
         audit("MANAGER_" + decision.upper(), "case", case["id"], final_note)
         flash(f"Request #{case['id']} {decision.lower()}.", "success")
         return redirect(url_for("approvals"))
-    rows = db().execute(
-        """SELECT cases.*, customers.customer_code, customers.full_name FROM cases
-           LEFT JOIN customers ON customers.id=cases.customer_id
-           WHERE cases.status='Pending' ORDER BY cases.id ASC"""
-    ).fetchall()
-    return render_template("approvals.html", rows=rows)
+    q = search_q()
+    appr_sql = """SELECT cases.*, customers.customer_code, customers.full_name FROM cases
+                  LEFT JOIN customers ON customers.id=cases.customer_id
+                  WHERE cases.status='Pending'"""
+    filt, params = sql_like_filter(
+        ["CAST(cases.id AS TEXT)", "cases.case_type", "customers.full_name", "customers.customer_code",
+         "cases.title", "cases.details", "cases.assigned_to"],
+        q,
+    )
+    rows = db().execute(appr_sql + filt + " ORDER BY cases.id ASC", params).fetchall()
+    return render_template("approvals.html", rows=rows, q=q)
 
 
 @app.route("/complaints", methods=["GET", "POST"])
@@ -1186,17 +1254,24 @@ def complaints():
         audit("COMPLAINT_CREATED", "complaint", cur.lastrowid, category)
         flash("Complaint logged.", "success")
         return redirect(url_for("complaints"))
-    rows = db().execute(
-        """SELECT complaints.*, customers.customer_code, customers.full_name FROM complaints
-           LEFT JOIN customers ON customers.id=complaints.customer_id ORDER BY complaints.id DESC LIMIT 100"""
-    ).fetchall()
+    q = search_q()
+    comp_sql = """SELECT complaints.*, customers.customer_code, customers.full_name FROM complaints
+                  LEFT JOIN customers ON customers.id=complaints.customer_id"""
+    where, params = sql_like_filter(
+        ["CAST(complaints.id AS TEXT)", "customers.full_name", "customers.customer_code", "complaints.category",
+         "complaints.details", "complaints.status", "complaints.assigned_to"],
+        q,
+        connector="WHERE",
+    )
+    rows = db().execute(comp_sql + where + " ORDER BY complaints.id DESC LIMIT 100", params).fetchall()
     staff = db().execute("SELECT full_name FROM employees WHERE role!='admin' ORDER BY full_name").fetchall()
-    return render_template("complaints.html", rows=rows, emp=emp, staff=staff)
+    return render_template("complaints.html", rows=rows, emp=emp, staff=staff, q=q)
 
 
 @app.route("/reports")
 @login_required
 def reports():
+    q = search_q()
     conn = db()
     today = today_prefix() + "%"
     txns = conn.execute(
@@ -1215,9 +1290,13 @@ def reports():
     ).fetchall()
     latest = conn.execute("SELECT * FROM audit_logs ORDER BY id DESC LIMIT 30").fetchall()
     vault = conn.execute("SELECT cash_balance FROM branch_vault WHERE id=1").fetchone()
+    txns = filter_rows(txns, q, ["txn_type"])
+    atm_rows = filter_rows(atm_rows, q, ["atm_id", "location", "status"])
+    case_rows = filter_rows(case_rows, q, ["case_type", "status"])
+    latest = filter_rows(latest, q, ["username", "action", "entity_type", "entity_id", "details"])
     return render_template(
         "reports.html", txns=txns, cash=cash, atm_rows=atm_rows, case_rows=case_rows,
-        latest=latest, vault=vault["cash_balance"],
+        latest=latest, vault=vault["cash_balance"], q=q,
     )
 
 
@@ -1249,8 +1328,15 @@ def export_report(kind):
 @login_required
 @roles_required("manager", "admin")
 def audit_page():
-    rows = db().execute("SELECT * FROM audit_logs ORDER BY id DESC LIMIT 250").fetchall()
-    return render_template("audit.html", rows=rows)
+    q = search_q()
+    sql = "SELECT * FROM audit_logs"
+    where, params = sql_like_filter(
+        ["username", "action", "entity_type", "entity_id", "details", "created_at"],
+        q,
+        connector="WHERE",
+    )
+    rows = db().execute(sql + where + " ORDER BY id DESC LIMIT 250", params).fetchall()
+    return render_template("audit.html", rows=rows, q=q)
 
 
 @app.route("/profile", methods=["GET", "POST"])
@@ -1367,10 +1453,15 @@ def admin_section():
                     audit("ADMIN_PASSWORD_RESET", "employee", username, "Password reset by admin")
                     flash(f"Password reset for {username}.", "success")
         return redirect(url_for("admin_section"))
-    employees = conn.execute(
-        "SELECT username,full_name,department,role,rank,email,phone,employee_code FROM employees ORDER BY employee_code"
-    ).fetchall()
-    return render_template("admin.html", employees=employees, role_desks=ROLE_DESKS)
+    q = search_q()
+    emp_sql = "SELECT username,full_name,department,role,rank,email,phone,employee_code FROM employees"
+    where, params = sql_like_filter(
+        ["username", "full_name", "department", "role", "rank", "email", "phone", "employee_code"],
+        q,
+        connector="WHERE",
+    )
+    employees = conn.execute(emp_sql + where + " ORDER BY employee_code", params).fetchall()
+    return render_template("admin.html", employees=employees, role_desks=ROLE_DESKS, q=q)
 
 
 @app.route("/change-password", methods=["GET", "POST"])

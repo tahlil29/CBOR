@@ -13,8 +13,10 @@
       <option value="IMPS">IMPS</option>
       <option value="UPI">UPI</option>
     </select></label>
-    <label>Account<select name="account_no" required><option value="">Select account</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }} ({{ a.balance|money }})</option>{% endfor %}</select></label>
-    <label class="span-2">Beneficiary account<select name="beneficiary"><option value="">For transfers only</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }}</option>{% endfor %}</select></label>
+    <label>Account<input type="search" placeholder="Filter accounts" data-filter-select="pay-account" autocomplete="off">
+    <select name="account_no" id="pay-account" required><option value="">Select account</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }} ({{ a.balance|money }})</option>{% endfor %}</select></label>
+    <label class="span-2">Beneficiary account<input type="search" placeholder="Filter beneficiary" data-filter-select="pay-beneficiary" autocomplete="off">
+    <select name="beneficiary" id="pay-beneficiary"><option value="">For transfers only</option>{% for a in accounts %}<option value="{{ a.account_no }}">{{ a.account_no }} · {{ a.full_name }}</option>{% endfor %}</select></label>
     <label>Amount (₹)<input type="number" name="amount" min="1" max="1000000" required></label>
     <label>Narration<input name="note" maxlength="200"></label>
     <div class="span-2"><button class="btn primary">Post payment</button></div>
@@ -23,6 +25,7 @@
 
 <section class="panel table-panel">
   <div class="panel-head"><h3>Transaction register</h3><a class="text-link" href="{{ url_for('export_report',kind='transactions') }}">Export CSV</a></div>
+  {% with placeholder='Search UTR, customer, account, type, officer' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>UTR</th><th>Customer</th><th>Type</th><th>Channel</th><th>Amount</th><th>Officer</th><th>Date</th></tr></thead><tbody>
   {% for t in rows %}<tr>
     <td><code>{{ t.txn_ref }}</code></td>

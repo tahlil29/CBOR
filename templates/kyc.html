@@ -17,6 +17,7 @@
 
 <section class="panel table-panel">
   <div class="panel-head"><h3>KYC register</h3></div>
+  {% with placeholder='Search customer, document, reference, status' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>Customer</th><th>Document</th><th>Reference</th><th>Status</th><th>Officer</th><th>Date</th></tr></thead><tbody>
   {% for k in rows %}<tr>
     <td><strong>{{ k.full_name }}</strong><small>{{ k.customer_code }}</small></td>

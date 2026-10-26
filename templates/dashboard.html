@@ -33,7 +33,8 @@
 
 <section class="panel table-panel">
   <div class="panel-head"><h3>Recent transactions</h3><a class="text-link" href="{{ url_for('transactions') }}">View all</a></div>
-  <div class="table-scroll"><table class="table-comfort"><thead><tr><th>UTR</th><th>Customer</th><th>Type</th><th>Amount</th><th>Time</th></tr></thead><tbody>
+  <div class="searchbar live-searchbar"><input type="search" placeholder="Quick filter this list" data-live-table="#dash-recent-txns" autocomplete="off" aria-label="Filter recent transactions"></div>
+  <div class="table-scroll"><table class="table-comfort" id="dash-recent-txns"><thead><tr><th>UTR</th><th>Customer</th><th>Type</th><th>Amount</th><th>Time</th></tr></thead><tbody>
   {% for t in recent %}<tr>
     <td><code>{{ t.txn_ref }}</code></td>
     <td><strong>{{ t.full_name }}</strong><small>{{ t.account_no }}</small></td>

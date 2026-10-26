@@ -25,6 +25,7 @@
 
 <section class="panel table-panel">
   <div class="panel-head"><h3>Request history</h3></div>
+  {% with placeholder='Search request, customer, status, officer' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>ID</th><th>Request</th><th>Customer</th><th>Status</th><th>Officer</th><th>Date</th></tr></thead><tbody>
   {% for c in cases %}<tr>
     <td>#{{ c.id }}</td>

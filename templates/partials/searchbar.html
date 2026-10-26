@@ -1,0 +1,5 @@
+<form class="searchbar" method="get" role="search">
+  <input type="search" name="q" value="{{ q|default('', true) }}" placeholder="{{ placeholder }}" autocomplete="off" aria-label="{{ placeholder }}">
+  <button type="submit" class="btn primary">Search</button>
+  {% if q|default('', true) %}<a class="btn ghost" href="{{ clear_url or request.path }}">Clear</a>{% endif %}
+</form>

@@ -77,5 +77,15 @@ body{background:#f6f8fb}.bank-banner{height:126px;position:relative;display:flex
 .portal-main .content-grid{gap:18px;margin-bottom:18px}
 .portal-main .form-grid{gap:14px}
 .portal-main .searchbar{margin-bottom:16px}
+.portal-main .searchbar input[type=search]{flex:1;min-width:140px}
+.portal-main .live-searchbar{margin-bottom:12px}
+.portal-main .live-searchbar input{width:100%;border:1px solid #dfe6ee;border-radius:8px;padding:10px 12px;font:inherit;font-size:12px}
+.portal-main .panel-search-only{padding:14px 18px}
+.portal-main .panel-search-only .searchbar{margin-bottom:0}
+.portal-main .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.topbar-search{display:flex;align-items:center;gap:8px;flex:1;max-width:420px;min-width:200px}
+.topbar-search input[type=search]{flex:1;border:1px solid #d5dee8;border-radius:8px;padding:9px 12px;font:inherit;font-size:12px;background:#fff}
+.topbar-search .btn.small{padding:8px 12px;font-size:10px}
+.portal-main .form-grid label input[type=search]{margin-bottom:6px}
 .portal-main .report-links a{padding:10px 14px;font-size:11px}
 @media(max-width:900px){.dashboard-grid{grid-template-columns:1fr}.summary-list{grid-template-columns:1fr}}

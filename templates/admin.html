@@ -20,6 +20,7 @@
 
 <section class="panel table-panel">
   <div class="panel-head"><h3>Employees ({{ employees|length }})</h3></div>
+  {% with placeholder='Search name, username, role, email, code' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>Name</th><th>Code</th><th>Role</th><th>Change role</th><th>Password</th><th></th></tr></thead><tbody>
   {% for e in employees %}
   <tr>

@@ -2,6 +2,7 @@
 {% block content %}
 <div class="page-header"><div><p class="page-lead">System activity and officer actions.</p></div><a class="btn ghost" href="{{ url_for('export_report',kind='audit') }}">Export CSV</a></div>
 <section class="panel table-panel">
+  {% with placeholder='Search user, action, entity, details' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead><tbody>
   {% for a in rows %}<tr>
     <td>{{ a.created_at }}</td><td>{{ a.username }}</td><td><strong>{{ a.action }}</strong></td><td>{{ a.entity_type }} {{ a.entity_id }}</td><td class="cell-wrap">{{ a.details }}</td>

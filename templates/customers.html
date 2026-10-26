@@ -2,11 +2,7 @@
 {% block content %}
 <div class="page-header"><div><p class="page-lead">Search by name, CIF, account or mobile.</p></div></div>
 <section class="panel">
-  <form class="searchbar" method="get">
-    <input name="q" value="{{ q }}" placeholder="Search customers">
-    <button class="btn primary">Search</button>
-    <a class="btn ghost" href="{{ url_for('customers') }}">Clear</a>
-  </form>
+  {% with placeholder='Search name, CIF, account, mobile, email' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>Customer</th><th>CIF</th><th>Account</th><th>Balance</th><th>KYC</th><th>Status</th></tr></thead><tbody>
   {% for c in rows %}<tr>
     <td><strong>{{ c.full_name }}</strong><small>{{ c.phone or '—' }} · {{ c.city }}</small></td>

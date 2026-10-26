@@ -16,6 +16,7 @@
 
 <section class="panel table-panel">
   <div class="panel-head"><h3>Service cases</h3></div>
+  {% with placeholder='Search service, customer, status, officer' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>ID</th><th>Service</th><th>Customer</th><th>Amount</th><th>Status</th><th>Officer</th></tr></thead><tbody>
   {% for c in cases %}<tr>
     <td>#{{ c.id }}</td><td>{{ c.case_type }}</td><td>{{ c.full_name or '—' }}<small>{{ c.customer_code or '' }}</small></td>
@@ -28,6 +29,7 @@
 
 <section class="panel">
   <div class="panel-head"><h3>Locker inventory</h3></div>
+  <p class="search-hint muted tiny">Use the search above to filter lockers by ID, size, status or customer.</p>
   <div class="locker-grid">{% for l in lockers %}<div class="locker {{ 'occupied' if l.status=='Occupied' else '' }}"><strong>{{ l.locker_id }}</strong><small>{{ l.size }}</small><span>{{ l.status }}</span></div>{% endfor %}</div>
 </section>
 {% endblock %}

@@ -2,13 +2,40 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Dashboard{% endblock %} · Central Bank of Rajasthan</title>
 <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='cbr-udaipur-crest.jpg') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=login2"></head><body>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=search1"></head><body>
 {% if session.get('username') %}
 <header class="bank-banner"><div class="bank-brand"><img class="crest-img bank-seal-img" src="{{ url_for('static', filename='cbr-udaipur-crest.jpg') }}" alt="Central Bank of Rajasthan, Udaipur Branch crest"><div><h1>Central Bank of Rajasthan</h1><h2>Udaipur Branch</h2><p>Your Trust, Our Strength</p></div></div><div class="banner-skyline"><span>UDAIPUR · THE CITY OF LAKES</span></div><div class="banner-user"><div class="profile-avatar">{{ (current_employee.full_name if current_employee else session['username'])[0]|upper }}</div><div><strong>{{ current_employee.full_name if current_employee else session['username']|title }}</strong><small>{{ current_employee.rank if current_employee else current_role }}</small></div><a href="{{ url_for('profile') }}" aria-label="Profile">Profile</a><div class="banner-time">▦ &nbsp; {{ today }} &nbsp; ◷ &nbsp; {{ now_time }}</div></div></header>
 <aside class="sidebar"><div class="branch-mini"><img class="crest-img mini-seal-img" src="{{ url_for('static', filename='cbr-udaipur-crest.jpg') }}" alt="CBR Udaipur"><div><strong>CBR Udaipur</strong><small>BRANCH OPERATIONS</small></div></div><nav>
 <a class="{{ 'active' if request.endpoint=='dashboard' else '' }}" href="{{ url_for('dashboard') }}">⌂ <span>Dashboard</span></a><a class="{{ 'active' if request.endpoint=='customers' else '' }}" href="{{ url_for('customers') }}">♙ <span>Customers</span></a><a class="{{ 'active' if request.endpoint=='account_cases' else '' }}" href="{{ url_for('account_cases') }}">▤ <span>Accounts</span></a><a class="{{ 'active' if request.endpoint=='transactions' else '' }}" href="{{ url_for('transactions') }}">↔ <span>Payments</span></a><a class="{{ 'active' if request.endpoint=='atms' else '' }}" href="{{ url_for('atms') }}">▣ <span>ATMs</span></a><a class="{{ 'active' if request.endpoint=='services' else '' }}" href="{{ url_for('services') }}">₹ <span>Loans & Lockers</span></a><a class="{{ 'active' if request.endpoint=='kyc' else '' }}" href="{{ url_for('kyc') }}">✓ <span>KYC</span></a><a class="{{ 'active' if request.endpoint=='complaints' else '' }}" href="{{ url_for('complaints') }}">⚑ <span>Complaints</span></a><a class="{{ 'active' if request.endpoint=='reports' else '' }}" href="{{ url_for('reports') }}">▥ <span>Reports</span></a>
 {% if current_employee and current_employee.role in ['manager','admin'] %}<a class="{{ 'active' if request.endpoint=='approvals' else '' }}" href="{{ url_for('approvals') }}">✦ <span>Approvals</span></a><a class="{{ 'active' if request.endpoint=='audit_page' else '' }}" href="{{ url_for('audit_page') }}">◷ <span>Audit</span></a>{% endif %}
 {% if current_employee and current_employee.role == 'admin' %}<a class="{{ 'active' if request.endpoint=='admin_section' else '' }}" href="{{ url_for('admin_section') }}">⚙ <span>Admin</span></a>{% endif %}<a class="{{ 'active' if request.endpoint=='profile' else '' }}" href="{{ url_for('profile') }}">♟ <span>Profile</span></a><a class="{{ 'active' if request.endpoint=='change_password' else '' }}" href="{{ url_for('change_password') }}">⚿ <span>Password</span></a><a class="nav-logout {{ 'active' if request.endpoint=='logout' else '' }}" href="{{ url_for('logout') }}">⇥ <span>Logout</span></a></nav><div class="sidebar-bottom"><span class="dot"></span> Training simulator</div><div class="sidebar-city">✦ &nbsp; UDAIPUR · RAJASTHAN</div></aside>
-{% endif %}<main class="{% if session.get('username') %}main portal-main{% else %}login-main{% endif %}">{% if session.get('username') %}<header class="topbar"><div><h2>{% block heading %}Dashboard{% endblock %}</h2><span class="topbar-sub">{{ branch.branch }} · {{ today }}</span></div></header>{% endif %}
+{% endif %}<main class="{% if session.get('username') %}main portal-main{% else %}login-main{% endif %}">{% if session.get('username') %}<header class="topbar"><div><h2>{% block heading %}Dashboard{% endblock %}</h2><span class="topbar-sub">{{ branch.branch }} · {{ today }}</span></div><form class="topbar-search" method="get" action="{{ url_for('customers') }}" role="search"><input type="search" name="q" placeholder="Find customer, CIF, account…" aria-label="Search customers"><button type="submit" class="btn primary small">Search</button></form></header>{% endif %}
 {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}{% block content %}{% endblock %}<footer>Central Bank of Rajasthan · IFSC {{ branch.ifsc }} · {{ branch.phone }}</footer></main>
-<script>document.querySelectorAll('[data-confirm]').forEach(el=>el.addEventListener('click',e=>{if(!confirm(el.dataset.confirm))e.preventDefault()}));</script></body></html>
+<script>
+document.querySelectorAll('[data-confirm]').forEach(el=>el.addEventListener('click',e=>{if(!confirm(el.dataset.confirm))e.preventDefault()}));
+document.querySelectorAll('[data-filter-select]').forEach(input=>{
+  const select=document.getElementById(input.dataset.filterSelect)||input.closest('label')?.querySelector('select');
+  if(!select)return;
+  const store=Array.from(select.options).map(o=>({value:o.value,text:o.text,selected:o.selected}));
+  input.addEventListener('input',()=>{
+    const q=input.value.trim().toLowerCase();
+    const cur=select.value;
+    select.innerHTML='';
+    store.filter(o=>!q||o.text.toLowerCase().includes(q)).forEach(o=>{
+      const opt=document.createElement('option');
+      opt.value=o.value; opt.text=o.text; if(o.value===cur)opt.selected=true;
+      select.appendChild(opt);
+    });
+  });
+});
+document.querySelectorAll('[data-live-table]').forEach(input=>{
+  const table=document.querySelector(input.dataset.liveTable);
+  if(!table)return;
+  const rows=table.tBodies[0]?.rows;
+  if(!rows)return;
+  input.addEventListener('input',()=>{
+    const q=input.value.trim().toLowerCase();
+    Array.from(rows).forEach(row=>{row.hidden=q&&!row.textContent.toLowerCase().includes(q);});
+  });
+});
+</script></body></html>

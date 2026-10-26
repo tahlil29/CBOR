@@ -2,6 +2,10 @@
 {% block content %}
 <div class="page-header"><div><p class="page-lead">Cash levels and service status across the branch network.</p></div><a class="btn ghost" href="{{ url_for('export_report',kind='atms') }}">Export CSV</a></div>
 
+<section class="panel panel-search-only">
+  {% with placeholder='Search ATM, location, movements, pending requests' %}{% include 'partials/searchbar.html' %}{% endwith %}
+</section>
+
 <div class="atm-cards compact-cards">{% for a in rows %}
   <div class="atm-card"><div class="atm-card-top"><strong>{{ a.atm_id }}</strong><span class="status {{ 'good' if a.status=='Online' else 'bad' }}">{{ a.status }}</span></div>
   <p>{{ a.location }}</p><div class="atm-card-balance">{{ a.cash_balance|money }}</div>

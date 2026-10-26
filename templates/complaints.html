@@ -16,6 +16,7 @@
 
 <section class="panel table-panel">
   <div class="panel-head"><h3>Complaint register</h3></div>
+  {% with placeholder='Search customer, category, details, status' %}{% include 'partials/searchbar.html' %}{% endwith %}
   <div class="table-scroll"><table class="table-comfort"><thead><tr><th>ID</th><th>Customer</th><th>Category</th><th>Details</th><th>Status</th><th>Assigned</th><th></th></tr></thead><tbody>
   {% for c in rows %}<tr>
     <td>#{{ c.id }}</td>
