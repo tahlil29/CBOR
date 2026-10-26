@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}Loans & lockers{% endblock %}{% block heading %}Loans & lockers{% endblock %}
+{% block content %}
+<div class="page-intro"><div><h1>Loans, lockers & digital support</h1><p>Track simulated applications and service cases. No real lending decisions are made.</p></div></div>
+<div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>New service request</h3><p>Enter a demo customer code from the customer directory.</p></div></div>
+<form method="post" class="form-grid">
+<label class="span-2">Service type<select name="case_type"><option>Loan Application</option><option>Locker Request</option><option>E-Banking Support</option><option>Other Verification</option></select></label>
+<label>Customer code<input name="customer_code" placeholder="CUST-0001" required></label>
+<label>Amount (loan amount, if relevant)<input type="number" name="amount" min="0" max="10000000" value="0"></label>
+<label class="span-2">Details / troubleshooting notes<textarea name="details" rows="3" placeholder="Demo details only; do not enter real credentials."></textarea></label>
+<div class="span-2"><button class="btn primary">Submit request →</button></div>
+</form></section>
+<section class="panel"><div class="panel-head"><div><h3>Locker inventory</h3><p>40 simulated lockers</p></div></div><div class="locker-grid">{% for l in lockers %}<div class="locker {{ 'occupied' if l.status=='Occupied' else '' }}"><strong>{{ l.locker_id }}</strong><small>{{ l.size }}</small><span>{{ l.status }}</span></div>{% endfor %}</div></section></div>
+<section class="panel table-panel"><div class="panel-head"><div><h3>Service cases</h3><p>Latest requests and decisions</p></div></div><div class="table-scroll"><table><thead><tr><th>ID</th><th>Type / title</th><th>Customer</th><th>Amount</th><th>Status</th><th>Assigned to</th><th>Created</th></tr></thead><tbody>{% for c in cases %}<tr><td>#{{ c.id }}</td><td><strong>{{ c.case_type }}</strong><small>{{ c.title }}</small></td><td>{{ c.full_name or '—' }} <small>{{ c.customer_code or '' }}</small></td><td>{{ c.requested_amount|money }}</td><td><span class="status {{ 'good' if c.status=='Approved' else 'bad' if c.status=='Rejected' else 'warn' }}">{{ c.status }}</span></td><td>{{ c.assigned_to }}</td><td>{{ c.created_at }}</td></tr>{% else %}<tr><td colspan="7" class="empty">No service requests yet.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

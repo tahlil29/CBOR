@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="login-brand"><div class="brand-icon large">CBR</div><span>Central Bank of Rajasthan <small>UDAIPUR BRANCH · EMPLOYEE PORTAL</small></span></div>
+  <div class="login-card"><span class="eyebrow">EMPLOYEE ACCESS</span><h1>Welcome back</h1><p class="muted">Sign in to your department workspace.</p>
+    <form method="post">
+      <label>Employee username</label><input name="username" placeholder="e.g. ankit" required autocomplete="username">
+      <label>Password</label><input type="password" name="password" placeholder="Enter demo password" required autocomplete="current-password">
+      <button class="btn primary full">Sign in to CBR Portal →</button>
+    </form>
+    <div class="demo-creds"><strong>Demo credentials</strong><p>Password for all six users: <code>Demo@123</code></p>
+      <div class="cred-grid"><span>ankit</span><span>shifa</span><span>jyoti</span><span>tahlil</span><span>sanket</span><span>bhavesh</span></div>
+    </div>
+  </div><p class="muted tiny center">Synthetic customer records · Virtual money only · Not a real bank</p>
+</div>
+{% endblock %}

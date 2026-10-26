@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}KYC & digital banking{% endblock %}{% block heading %}KYC & digital banking{% endblock %}
+{% block content %}
+<div class="page-intro"><div><h1>KYC & digital banking</h1><p>Record document verification status and simulated e-banking troubleshooting.</p></div></div>
+<div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>Update KYC record</h3><p>Use fictional document references only.</p></div></div>
+<form method="post" class="form-grid">
+<label>Customer code<input name="customer_code" placeholder="CUST-0001" required></label>
+<label>Document type<select name="doc_type"><option>Demo ID</option><option>Address proof (demo)</option><option>Photo (demo)</option><option>Other fictional document</option></select></label>
+<label>Masked demo reference<input name="masked_ref" value="DEMO-****-0001" required></label>
+<label>Status<select name="status"><option>Pending</option><option>Verified</option><option>Rejected</option></select></label>
+<label class="span-2">Verification notes<input name="note" placeholder="Mismatch, missing document, or verification note"></label>
+<div class="span-2"><button class="btn primary">Save KYC record →</button></div>
+</form></section>
+<section class="panel info-panel"><div class="queue-icon blue">✓</div><h3>Digital support checklist</h3><ul class="check-list"><li>Account activation status</li><li>Simulated login lockouts</li><li>Password reset request tracking</li><li>Customer identity verification</li><li>Never collect real passwords or OTPs</li></ul><div class="note-box"><strong>Security reminder</strong><p>This demo records support cases only; it does not connect to real net banking.</p></div></section></div>
+<section class="panel table-panel"><div class="panel-head"><div><h3>Recent KYC records</h3><p>Latest 100 verification records</p></div></div><div class="table-scroll"><table><thead><tr><th>Customer</th><th>Document type</th><th>Demo reference</th><th>Status</th><th>Checked by</th><th>Created</th></tr></thead><tbody>{% for k in rows %}<tr><td><strong>{{ k.full_name }}</strong><small>{{ k.customer_code }}</small></td><td>{{ k.doc_type }}</td><td><code>{{ k.masked_ref }}</code></td><td><span class="status {{ 'good' if k.status=='Verified' else 'bad' if k.status=='Rejected' else 'warn' }}">{{ k.status }}</span></td><td>{{ k.checked_by or 'Seed data' }}</td><td>{{ k.created_at }}</td></tr>{% else %}<tr><td colspan="6" class="empty">No KYC records.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}Manager approvals{% endblock %}{% block heading %}Manager approvals{% endblock %}
+{% block content %}
+<div class="page-intro"><div><h1>Manager approval queue</h1><p>Review requests submitted by branch staff. Decisions are audit logged.</p></div><span class="count-pill">Bhavesh · Manager</span></div>
+<section class="panel"><div class="table-scroll"><table><thead><tr><th>Request</th><th>Customer</th><th>Details</th><th>Amount</th><th>Submitted by</th><th>Decision</th></tr></thead><tbody>
+{% for r in rows %}<tr><td><strong>#{{ r.id }} · {{ r.case_type }}</strong><small>{{ r.created_at }}</small></td><td>{{ r.full_name or '—' }}<small>{{ r.customer_code or '' }}</small></td><td>{{ r.details or r.title }}<small>{{ r.title }}</small></td><td>{{ r.requested_amount|money }}</td><td>{{ r.assigned_to }}</td><td><form method="post" class="decision-form"><input type="hidden" name="case_id" value="{{ r.id }}"><input name="decision_note" placeholder="Decision note" aria-label="Decision note"><button name="decision" value="Approved" class="btn small success">Approve</button><button name="decision" value="Rejected" class="btn small danger">Reject</button></form></td></tr>
+{% else %}<tr><td colspan="6" class="empty">No pending approvals. You're all caught up.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

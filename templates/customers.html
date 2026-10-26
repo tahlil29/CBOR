@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}Customers{% endblock %}{% block heading %}Customer directory{% endblock %}
+{% block content %}
+<div class="page-intro"><div><h1>Customer directory</h1><p>500 seeded synthetic customers with demo accounts. No real personal data.</p></div><span class="count-pill">Population model · 50,000+</span></div>
+<section class="panel"><form class="searchbar" method="get"><input name="q" value="{{ q }}" placeholder="Search by name, customer code or account number"><button class="btn primary">Search</button><a class="btn ghost" href="{{ url_for('customers') }}">Reset</a></form>
+<div class="table-scroll"><table><thead><tr><th>Customer</th><th>Customer ID</th><th>Account number</th><th>Balance</th><th>City</th><th>KYC / Account</th></tr></thead><tbody>
+{% for c in rows %}<tr><td><strong>{{ c.full_name }}</strong><small>{{ c.email or '—' }} · {{ c.phone or '—' }}</small></td><td><code>{{ c.customer_code }}</code></td><td>{{ c.account_no or 'No account' }}</td><td class="amount">{{ c.balance|money if c.balance is not none else '—' }}</td><td>{{ c.city }}</td><td><span class="status {{ 'good' if c.account_status=='Active' else 'muted-status' }}">{{ c.account_status or 'No account' }}</span></td></tr>{% else %}<tr><td colspan="6" class="empty">No customers match that search.</td></tr>{% endfor %}
+</tbody></table></div><p class="table-foot">Showing up to 100 records per view. Use search to locate a specific customer.</p></section>
+{% endblock %}
