@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: cbr-udaipur
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 --access-logfile - --error-logfile - app:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: BANK_SIM_SECRET
+        generateValue: true
+      - key: BANK_SIM_SECURE
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "1"

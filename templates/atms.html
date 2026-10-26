@@ -4,6 +4,7 @@
 <div class="atm-cards">{% for a in rows %}<div class="atm-card"><div class="atm-card-top"><div class="atm-symbol big">▣</div><span class="status {{ 'good' if a.status=='Online' else 'bad' }}">{{ a.status }}</span></div><h3>{{ a.atm_id }}</h3><p>{{ a.location }}</p><div class="atm-card-balance">{{ a.cash_balance|money }}</div><small>Alert threshold {{ a.threshold|money }}</small><div class="progress"><span style="width:{{ [100, (a.cash_balance / 400000 * 100)|int]|min }}%"></span></div><div class="atm-alert {{ 'alert-red' if a.cash_balance==0 else 'alert-amber' if a.cash_balance<=a.threshold else 'alert-green' }}">{{ 'URGENT · Replenishment required' if a.cash_balance==0 else 'LOW CASH · Review request' if a.cash_balance<=a.threshold else 'Cash level normal' }}</div></div>{% endfor %}</div>
 <div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>Record ATM action</h3><p>Jyoti submits cash requests; Bhavesh records approved movements.</p></div></div>
 <form method="post" class="form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 <label>ATM<select name="atm_id">{% for a in rows %}<option>{{ a.atm_id }}</option>{% endfor %}</select></label>
 <label>Action<select name="movement_type"><option>Replenishment</option><option>Cash Collection</option><option>Service Update</option></select></label>
 <label>Amount (₹)<input type="number" name="amount" min="0" max="2000000" value="0"></label>

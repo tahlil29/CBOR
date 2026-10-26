@@ -1,81 +1,96 @@
-# Bank Branch & ATM Simulation System
+# Central Bank of Rajasthan — Udaipur Main Branch
 
-A local Flask web app for a classroom/demo banking simulation. It uses a local SQLite database, synthetic customer records, virtual money, role-based employee access, audit logs, ATM cash controls, manager approvals and CSV exports.
+A Flask training simulator for a branch operations desk: customer CIFs, savings, current and salary accounts, teller cash, NEFT / IMPS / UPI inside the branch, ATM cash, KYC, loans, lockers, complaints, manager approval and an audit log.
 
-## Included
-- One simulated branch and six ATM machines.
-- 1,000 seeded synthetic customers and one active account per seeded customer.
-- Six employee logins: Ankit (cash deposits), Shifa (cash withdrawals), Jyoti (ATMs/loans/lockers), Tahlil (account opening/closing), Sanket (KYC/digital support), Bhavesh (manager).
-- Virtual deposits/withdrawals with balance checks, transaction references, cash ledger entries and audit logs.
-- Account opening/closing requests and manager approval.
-- ATM low-cash thresholds, replenishment/collection requests and manager approval.
-- KYC record tracking, loan/locker/support cases, complaint register.
-- Manager approval queue, audit log and CSV reports.
+All customers, balances and payments are fictional. Nothing here connects to a real bank, card network or identity service.
 
-## Requirements
-- Python 3.10 or newer
-- Internet is only needed once if pip needs to download Flask dependencies. Google Fonts are optional and only affect typography.
+## Branch identity
 
-## Run on Windows
-1. Extract `bank_branch_atm_simulator.zip`.
-2. Open the extracted folder in Command Prompt or PowerShell.
-3. Create a virtual environment:
-   ```powershell
-   py -m venv .venv
-   .venv\Scripts\activate
-   ```
-4. Install dependencies:
-   ```powershell
-   pip install -r requirements.txt
-   ```
-5. Start the app:
-   ```powershell
-   python app.py
-   ```
-6. Open `http://127.0.0.1:5000` in your browser.
+| | |
+|---|---|
+| Branch | Udaipur Main Branch |
+| IFSC | `CBRU0001234` |
+| MICR | `313029001` |
+| Branch code | `001234` |
+| Address | 14, City Palace Road, Udaipur, Rajasthan 313001 |
 
-## Run on macOS/Linux
+Customer IDs look like `CBRCIF000001`. Account numbers are 14 digits beginning with `001234`.
+
+## Run locally
+
+Python 3.11 or newer.
+
+```powershell
+py -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
+Open `http://127.0.0.1:5000`.
+
+macOS or Linux:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
-Then open `http://127.0.0.1:5000`.
 
-## Demo logins
-The default password for all seeded demo users, including `admin`, is `Demo@123`. Change these before showing the demo to others.
-
-| Username | Employee | Department |
-|---|---|---|
-| `ankit` | Ankit | Cash Deposit |
-| `shifa` | Shifa | Cash Withdrawal |
-| `jyoti` | Jyoti | ATM, Loans & Lockers |
-| `tahlil` | Tahlil | Account Management |
-| `sanket` | Sanket | Digital Banking & KYC |
-| `bhavesh` | Bhavesh | Branch Manager |
-| `admin` | System Administrator | Administration (roles and password resets) |
-
-Change each password after first login using **Change password**. For a classroom demo, use only on your own machine or a trusted local network.
-
-## Useful demo flow
-1. Sign in as `ankit`, open Cash transactions, and process a deposit to an active account.
-2. Sign in as `shifa` and try a withdrawal; insufficient-balance requests should be rejected.
-3. Sign in as `tahlil`, create an Account Opening request, then sign in as `bhavesh` and approve it.
-4. Sign in as `jyoti` and submit an ATM replenishment request; Bhavesh approves it in Manager approvals.
-5. Sign in as `sanket` and create/update a KYC record.
-6. Open Reports and export transactions, customers, ATM status, cases or audit records as CSV.
-
-## Database and reset
-The database `bank_simulator.db` is created beside `app.py` on first startup. To reset all demo data, stop the server and delete that database file, then restart the app. A fresh set of 500 seeded customers and the default employee credentials will be recreated.
+The first start creates `bank_simulator.db` beside `app.py`, with 1,000 customers, teller history, six ATMs and the employee desks. Delete that file and start again to rebuild it.
 
 Optional database path:
-- Windows PowerShell: `$env:BANK_SIM_DB="C:\\path\\to\\bank_simulator.db"`
-- macOS/Linux: `export BANK_SIM_DB="/path/to/bank_simulator.db"`
 
-## Important limitations / safety
-- This is a training simulator, not real banking software. It does not connect to payment networks, banks, ATMs or identity-verification providers.
-- All money is virtual. Customer records are synthetic and use reserved `.test` email domains.
-- Never enter real Aadhaar/PAN numbers, OTPs, passwords, bank credentials or real customer records.
-- This starter is suitable for a local project demo, not production deployment. Before any public deployment, add CSRF protection, secure secret management, HTTPS, stronger session settings, database migrations, backups, rate limiting, authorization tests and a security review.
-- Loan approval is a simulated case decision only; it does not calculate eligibility or disburse real funds.
+```powershell
+$env:BANK_SIM_DB="C:\path\to\bank_simulator.db"
+```
+
+## Demo desks
+
+Shared password: `Demo@123`
+
+| Username | Desk |
+|---|---|
+| `ankit` | Cash deposits |
+| `shifa` | Cash withdrawals |
+| `jyoti` | ATMs, loans and lockers |
+| `tahlil` | Account opening and closing |
+| `sanket` | KYC, NEFT, IMPS and UPI |
+| `bhavesh` | Branch manager |
+| `admin` | Roles and password resets |
+
+## Deploy on Render
+
+The repository includes `Procfile`, `runtime.txt`, `requirements.txt` and `render.yaml`.
+
+1. Push this project to GitHub.
+2. In Render, choose **New** → **Blueprint** and select the repository. Render reads `render.yaml`.
+3. Or create a **Web Service** manually:
+   - Runtime: Python
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 --access-logfile - --error-logfile - app:app`
+   - Health check path: `/healthz`
+4. Set environment variables:
+   - `BANK_SIM_SECRET` — a long random string. The blueprint generates one.
+   - `BANK_SIM_SECURE` — `1` so the session cookie is HTTPS-only.
+5. Deploy and open the service URL. Sign in with any username above and `Demo@123`.
+
+`/healthz` returns JSON when the process and database are up. The app listens on Render's `PORT` and seeds the branch database during startup, so a fresh instance is usable without a manual step.
+
+The free plan disk is ephemeral. A new deploy or a wiped instance recreates the 1,000 fictional customers and clears payments made during the demo. To keep data, attach a persistent disk on a paid plan and set `BANK_SIM_DB` to a file on that disk, for example `/var/data/bank_simulator.db`.
+
+Use one Gunicorn worker. SQLite is the database, and extra workers would fight over the same file.
+
+## Useful demo
+
+1. Sign in as `ankit` and post a cash deposit in a multiple of ₹100.
+2. Sign in as `shifa`. A withdrawal larger than the balance, or larger than the teller vault, is declined.
+3. Sign in as `sanket` and post a UPI or NEFT transfer between two accounts of this IFSC.
+4. Sign in as `tahlil`, open an account, then sign in as `bhavesh` and approve it.
+5. Sign in as `jyoti`, raise an ATM replenishment, and approve it as `bhavesh`. An approved loan is credited to the customer's operative account.
+6. Open Reports and download the CSV files.
+
+## Limits
+
+This is a classroom simulator. Do not enter real Aadhaar numbers, PANs, passwords or customer records. Loan sanction in this app only credits a virtual balance. It is not a core-banking system and it is not meant to hold real money.

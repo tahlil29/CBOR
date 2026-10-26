@@ -1,16 +1,18 @@
 {% extends "base.html" %}{% block title %}Sign in{% endblock %}
 {% block content %}
 <div class="login-wrap">
-  <div class="login-brand"><div class="brand-icon large">CBR</div><span>Central Bank of Rajasthan <small>UDAIPUR BRANCH · EMPLOYEE PORTAL</small></span></div>
+  <div class="login-brand"><img class="crest-img login-crest" src="{{ url_for('static', filename='cbr-udaipur-crest.jpg') }}" alt="Central Bank of Rajasthan, Udaipur Branch"><span>Central Bank of Rajasthan <small>UDAIPUR BRANCH · EMPLOYEE PORTAL</small></span></div>
   <div class="login-card"><span class="eyebrow">EMPLOYEE ACCESS</span><h1>Welcome back</h1><p class="muted">Sign in to your department workspace.</p>
     <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label>Employee username</label><input name="username" placeholder="e.g. ankit" required autocomplete="username">
       <label>Password</label><input type="password" name="password" placeholder="Enter demo password" required autocomplete="current-password">
       <button class="btn primary full">Sign in to CBR Portal →</button>
     </form>
-    <div class="demo-creds"><strong>Demo credentials</strong><p>Password for all six users: <code>Demo@123</code></p>
-      <div class="cred-grid"><span>ankit</span><span>shifa</span><span>jyoti</span><span>tahlil</span><span>sanket</span><span>bhavesh</span></div>
+    <div class="demo-creds"><strong>Branch access</strong><p>Shared password for every desk: <code>Demo@123</code></p>
+      <div class="cred-grid"><span>ankit</span><span>shifa</span><span>jyoti</span><span>tahlil</span><span>sanket</span><span>bhavesh</span><span>admin</span></div>
+      <p>IFSC {{ branch.ifsc }} · {{ branch.address }}</p>
     </div>
-  </div><p class="muted tiny center">Synthetic customer records · Virtual money only · Not a real bank</p>
+  </div><p class="muted tiny center">Training branch · Fictional customers · Virtual money only</p>
 </div>
 {% endblock %}

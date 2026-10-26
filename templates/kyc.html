@@ -3,9 +3,10 @@
 <div class="page-intro"><div><h1>KYC & digital banking</h1><p>Record document verification status and simulated e-banking troubleshooting.</p></div></div>
 <div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>Update KYC record</h3><p>Use fictional document references only.</p></div></div>
 <form method="post" class="form-grid">
-<label>Customer code<input name="customer_code" placeholder="CUST-0001" required></label>
-<label>Document type<select name="doc_type"><option>Demo ID</option><option>Address proof (demo)</option><option>Photo (demo)</option><option>Other fictional document</option></select></label>
-<label>Masked demo reference<input name="masked_ref" value="DEMO-****-0001" required></label>
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Customer ID<input name="customer_code" placeholder="CBRCIF000001" required></label>
+<label>Document type<select name="doc_type"><option>Aadhaar</option><option>PAN</option><option>Voter ID</option><option>Passport</option><option>Driving Licence</option></select></label>
+<label>Masked reference<input name="masked_ref" value="XXXX-XXXX-0000" required></label>
 <label>Status<select name="status"><option>Pending</option><option>Verified</option><option>Rejected</option></select></label>
 <label class="span-2">Verification notes<input name="note" placeholder="Mismatch, missing document, or verification note"></label>
 <div class="span-2"><button class="btn primary">Save KYC record →</button></div>

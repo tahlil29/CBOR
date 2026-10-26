@@ -3,9 +3,10 @@
 <div class="page-intro"><div><h1>Loans, lockers & digital support</h1><p>Track simulated applications and service cases. No real lending decisions are made.</p></div></div>
 <div class="content-grid form-layout"><section class="panel"><div class="panel-head"><div><h3>New service request</h3><p>Enter a demo customer code from the customer directory.</p></div></div>
 <form method="post" class="form-grid">
-<label class="span-2">Service type<select name="case_type"><option>Loan Application</option><option>Locker Request</option><option>E-Banking Support</option><option>Other Verification</option></select></label>
-<label>Customer code<input name="customer_code" placeholder="CUST-0001" required></label>
-<label>Amount (loan amount, if relevant)<input type="number" name="amount" min="0" max="10000000" value="0"></label>
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label class="span-2">Service type<select name="case_type"><option>Loan Application</option><option>Locker Request</option><option>Cheque Book</option><option>E-Banking Support</option></select></label>
+<label>Customer ID<input name="customer_code" placeholder="CBRCIF000001" required></label>
+<label>Amount (loan, if relevant)<input type="number" name="amount" min="0" max="1000000" value="0"></label>
 <label class="span-2">Details / troubleshooting notes<textarea name="details" rows="3" placeholder="Demo details only; do not enter real credentials."></textarea></label>
 <div class="span-2"><button class="btn primary">Submit request →</button></div>
 </form></section>
