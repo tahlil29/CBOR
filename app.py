@@ -36,6 +36,16 @@ BRANCH = {
     "current_rate": "0.00% p.a.",
 }
 
+ROLE_DESKS = {
+    "deposit": ("Cash Deposit", "Cash Officer"),
+    "withdrawal": ("Cash Withdrawal", "Cash Officer"),
+    "atm": ("ATM, Loans & Lockers", "Operations Officer"),
+    "accounts": ("Account Management", "Account Services Officer"),
+    "kyc": ("Digital Banking & KYC", "Digital Banking Officer"),
+    "manager": ("Branch Manager", "Branch Manager"),
+    "admin": ("Administration", "System Administrator"),
+}
+
 EMPLOYEES = [
     ("ankit", "Ankit Sharma", "Cash Deposit", "deposit", "Cash Officer", "CBR-EMP-101", "9829011101"),
     ("shifa", "Shifa Khan", "Cash Withdrawal", "withdrawal", "Cash Officer", "CBR-EMP-102", "9829011102"),
@@ -115,6 +125,18 @@ def next_cif(conn):
     ).fetchone()
     number = int(row[0][-6:]) + 1 if row else 1
     return f"CBRCIF{number:06d}"
+
+
+def next_employee_code(conn):
+    numbers = []
+    for row in conn.execute("SELECT employee_code FROM employees").fetchall():
+        code = row["employee_code"] or ""
+        if code.startswith("CBR-EMP-"):
+            try:
+                numbers.append(int(code.rsplit("-", 1)[-1]))
+            except ValueError:
+                continue
+    return f"CBR-EMP-{max(numbers, default=100) + 1:03d}"
 
 
 def next_account_no(conn):
@@ -1252,45 +1274,96 @@ def profile():
 def admin_section():
     conn = db()
     if request.method == "POST":
-        username = request.form.get("username", "").strip().lower()
         action = request.form.get("action", "")
-        target = conn.execute("SELECT * FROM employees WHERE username=?", (username,)).fetchone()
-        if not target:
-            flash("Employee not found.", "error")
-        elif username == "admin" and action == "role":
-            flash("The primary administrator role stays with this account.", "error")
-        elif action == "role":
-            new_role = request.form.get("role", "")
-            departments = {
-                "deposit": "Cash Deposit", "withdrawal": "Cash Withdrawal", "atm": "ATM, Loans & Lockers",
-                "accounts": "Account Management", "kyc": "Digital Banking & KYC",
-                "manager": "Branch Manager", "admin": "Administration",
-            }
-            if new_role not in departments:
-                flash("Choose a valid desk.", "error")
+        username = request.form.get("username", "").strip().lower()
+
+        if action == "create":
+            full_name = request.form.get("full_name", "").strip()[:100]
+            role = request.form.get("role", "")
+            new_username = request.form.get("new_username", "").strip().lower()
+            password = request.form.get("password", "").strip() or DEMO_PASSWORD
+            email = request.form.get("email", "").strip()[:120]
+            phone = request.form.get("phone", "").strip()[:15]
+            if not re.fullmatch(r"[a-z][a-z0-9_]{2,19}", new_username):
+                flash("Username must be 3–20 characters: lowercase letters, numbers or underscore.", "error")
+            elif len(full_name.split()) < 2:
+                flash("Enter the employee's full name.", "error")
+            elif role not in ROLE_DESKS:
+                flash("Choose a valid desk role.", "error")
+            elif len(password) < 8:
+                flash("Password must be at least 8 characters.", "error")
+            elif conn.execute("SELECT 1 FROM employees WHERE username=?", (new_username,)).fetchone():
+                flash("That username is already on the branch roster.", "error")
             else:
+                department, default_rank = ROLE_DESKS[role]
+                rank = request.form.get("rank", "").strip()[:60] or default_rank
                 conn.execute(
-                    "UPDATE employees SET role=?, department=? WHERE username=?",
-                    (new_role, departments[new_role], username),
+                    """INSERT INTO employees(username,full_name,department,role,password_hash,rank,email,phone,employee_code)
+                       VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (
+                        new_username, full_name, department, role, generate_password_hash(password),
+                        rank, email or f"{new_username}@cbrudaipur.example", phone, next_employee_code(conn),
+                    ),
                 )
-                audit("ROLE_CHANGED", "employee", username, f"Desk changed to {new_role}")
-                flash(f"Desk updated for {username}.", "success")
-        elif action == "password":
-            new_password = request.form.get("new_password", "")
-            if len(new_password) < 8:
-                flash("Password must contain at least 8 characters.", "error")
+                conn.commit()
+                audit("EMPLOYEE_CREATED", "employee", new_username, f"Role {role}")
+                flash(f"Employee {new_username} added.", "success")
+        elif action == "delete":
+            target = conn.execute("SELECT * FROM employees WHERE username=?", (username,)).fetchone()
+            if not target:
+                flash("Employee not found.", "error")
+            elif username == "admin":
+                flash("The primary admin account cannot be removed.", "error")
+            elif username == session.get("username"):
+                flash("You cannot remove your own account while signed in.", "error")
             else:
-                conn.execute(
-                    "UPDATE employees SET password_hash=? WHERE username=?",
-                    (generate_password_hash(new_password), username),
-                )
-                audit("ADMIN_PASSWORD_RESET", "employee", username, "Password reset by admin")
-                flash(f"Password reset for {username}.", "success")
+                conn.execute("DELETE FROM employees WHERE username=?", (username,))
+                conn.commit()
+                audit("EMPLOYEE_REMOVED", "employee", username, "Removed from branch roster")
+                flash(f"Employee {username} removed.", "success")
+        else:
+            target = conn.execute("SELECT * FROM employees WHERE username=?", (username,)).fetchone()
+            if not target:
+                flash("Employee not found.", "error")
+            elif username == "admin" and action == "role":
+                flash("The primary administrator role stays with this account.", "error")
+            elif action == "role":
+                new_role = request.form.get("role", "")
+                if new_role not in ROLE_DESKS:
+                    flash("Choose a valid desk.", "error")
+                else:
+                    department, default_rank = ROLE_DESKS[new_role]
+                    rank = request.form.get("rank", "").strip()[:60]
+                    if rank:
+                        conn.execute(
+                            "UPDATE employees SET role=?, department=?, rank=? WHERE username=?",
+                            (new_role, department, rank, username),
+                        )
+                    else:
+                        conn.execute(
+                            "UPDATE employees SET role=?, department=? WHERE username=?",
+                            (new_role, department, username),
+                        )
+                    conn.commit()
+                    audit("ROLE_CHANGED", "employee", username, f"Desk changed to {new_role}")
+                    flash(f"Desk updated for {username}.", "success")
+            elif action == "password":
+                new_password = request.form.get("new_password", "")
+                if len(new_password) < 8:
+                    flash("Password must contain at least 8 characters.", "error")
+                else:
+                    conn.execute(
+                        "UPDATE employees SET password_hash=? WHERE username=?",
+                        (generate_password_hash(new_password), username),
+                    )
+                    conn.commit()
+                    audit("ADMIN_PASSWORD_RESET", "employee", username, "Password reset by admin")
+                    flash(f"Password reset for {username}.", "success")
         return redirect(url_for("admin_section"))
     employees = conn.execute(
         "SELECT username,full_name,department,role,rank,email,phone,employee_code FROM employees ORDER BY employee_code"
     ).fetchall()
-    return render_template("admin.html", employees=employees)
+    return render_template("admin.html", employees=employees, role_desks=ROLE_DESKS)
 
 
 @app.route("/change-password", methods=["GET", "POST"])

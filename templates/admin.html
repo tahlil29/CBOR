@@ -1,1 +1,58 @@
-{% extends "base.html" %}{% block title %}Admin Section{% endblock %}{% block heading %}Administration{% endblock %}{% block content %}<div class="page-intro"><div><h1>Admin Section</h1><p>Manage employee access, system roles and password resets.</p></div><span class="status critical">Administrator only</span></div><div class="note-box admin-note"><strong>Access control</strong><p>Role changes immediately affect page permissions. Password resets require at least 8 characters. All admin actions are recorded in the audit log.</p></div><section class="panel table-panel"><div class="panel-head"><div><h3>Employee Directory</h3><p>{{ employees|length }} employee accounts</p></div></div><div class="table-scroll"><table><thead><tr><th>Employee</th><th>Designation / Rank</th><th>Current role</th><th>Change role</th><th>Reset password</th></tr></thead><tbody>{% for e in employees %}<tr><td><strong>{{ e.full_name }}</strong><small>@{{ e.username }} · {{ e.email or 'No email added' }}</small></td><td>{{ e.rank }}<small>{{ e.department }}</small></td><td><span class="status {{ 'critical' if e.role=='admin' else 'good' }}">{{ e.role }}</span></td><td><form method="post" class="admin-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="username" value="{{ e.username }}"><input type="hidden" name="action" value="role"><select name="role">{% for role in ['deposit','withdrawal','atm','accounts','kyc','manager','admin'] %}<option value="{{ role }}" {% if e.role==role %}selected{% endif %}>{{ role|title }}</option>{% endfor %}</select><button class="btn small primary">Save</button></form></td><td><form method="post" class="admin-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="username" value="{{ e.username }}"><input type="hidden" name="action" value="password"><input type="password" name="new_password" minlength="8" placeholder="New password" required><button class="btn small ghost">Reset</button></form></td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}
+{% extends "base.html" %}{% block title %}Admin Section{% endblock %}{% block heading %}Administration{% endblock %}
+{% block content %}
+<div class="page-intro"><div><h1>Employee administration</h1><p>Add or remove branch users, change desk roles, and reset passwords.</p></div><span class="status critical">Administrator only</span></div>
+<div class="note-box admin-note"><strong>Access control</strong><p>New users can sign in immediately. Role changes apply on the next page load. The built-in <code>admin</code> account cannot be deleted. All actions are audit logged.</p></div>
+
+<section class="panel"><div class="panel-head"><div><h3>Add employee</h3><p>Create a new desk login for this branch.</p></div></div>
+<form method="post" class="form-grid admin-create">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="action" value="create">
+  <label>Username<input name="new_username" placeholder="e.g. priya_verma" required pattern="[a-z][a-z0-9_]{2,19}" autocomplete="off"></label>
+  <label>Full name<input name="full_name" placeholder="First and last name" required></label>
+  <label>Desk role<select name="role" required>{% for role, meta in role_desks.items() %}<option value="{{ role }}">{{ meta[0] }} ({{ role }})</option>{% endfor %}</select></label>
+  <label>Designation<input name="rank" placeholder="Optional; defaults by role"></label>
+  <label>Work email<input type="email" name="email" placeholder="name@cbrudaipur.example"></label>
+  <label>Mobile<input name="phone" placeholder="10-digit number"></label>
+  <label class="span-2">Initial password<input type="password" name="password" minlength="8" placeholder="Leave blank for Demo@123"></label>
+  <div class="span-2"><button class="btn primary">Add employee →</button></div>
+</form></section>
+
+<section class="panel table-panel"><div class="panel-head"><div><h3>Employee directory</h3><p>{{ employees|length }} accounts on this branch</p></div></div>
+<div class="table-scroll"><table><thead><tr><th>Employee</th><th>Code</th><th>Desk</th><th>Change role</th><th>Reset password</th><th>Remove</th></tr></thead><tbody>
+{% for e in employees %}
+<tr>
+  <td><strong>{{ e.full_name }}</strong><small>@{{ e.username }} · {{ e.email or '—' }}</small></td>
+  <td><code>{{ e.employee_code }}</code><small>{{ e.rank }}</small></td>
+  <td><span class="status {{ 'critical' if e.role=='admin' else 'good' }}">{{ e.role }}</span><small>{{ e.department }}</small></td>
+  <td>
+    <form method="post" class="admin-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="username" value="{{ e.username }}">
+      <input type="hidden" name="action" value="role">
+      <select name="role">{% for role in role_desks %}<option value="{{ role }}" {% if e.role==role %}selected{% endif %}>{{ role|title }}</option>{% endfor %}</select>
+      <button class="btn small primary" {% if e.username=='admin' %}disabled title="Protected account"{% endif %}>Save</button>
+    </form>
+  </td>
+  <td>
+    <form method="post" class="admin-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="username" value="{{ e.username }}">
+      <input type="hidden" name="action" value="password">
+      <input type="password" name="new_password" minlength="8" placeholder="New password" required>
+      <button class="btn small ghost">Reset</button>
+    </form>
+  </td>
+  <td>
+    {% if e.username != 'admin' %}
+    <form method="post" class="admin-inline" onsubmit="return confirm('Remove {{ e.full_name }} from the branch?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="username" value="{{ e.username }}">
+      <input type="hidden" name="action" value="delete">
+      <button class="btn small danger">Remove</button>
+    </form>
+    {% else %}<span class="muted tiny">Protected</span>{% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody></table></div></section>
+{% endblock %}
